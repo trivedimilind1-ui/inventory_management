@@ -5,13 +5,13 @@
 <div class="page-header mb-3">
   <div>
     <h1 class="page-title">
-      <i class="bi bi-calculator text-primary"></i> Supermarket POS Billing Terminal
+      <i class="fa-solid fa-cash-register text-success"></i> Supermarket POS Billing Terminal
     </h1>
     <div class="page-subtitle">Fast barcode scanning, dynamic cart calculations, multi-payment support, and instant receipt generation</div>
   </div>
-  <div>
+  <div class="d-flex gap-2">
     <a href="{{ url_for('sales.history') }}" class="btn btn-outline-secondary">
-      <i class="bi bi-clock-history me-1"></i> Sales History
+      <i class="fa-solid fa-clock-rotate-left me-1"></i> Register Sales History
     </a>
   </div>
 </div>
@@ -20,26 +20,30 @@
   <!-- LEFT: PRODUCT CATALOG & BARCODE SCANNER -->
   <div class="d-flex flex-column gap-3">
     <!-- Barcode & Search Controls -->
-    <div class="card p-3 shadow-sm">
+    <div class="card p-3 shadow-sm border">
       <div class="row g-2">
         <div class="col-md-6">
-          <label class="form-label fw-semibold small text-muted"><i class="bi bi-upc-scan text-primary me-1"></i> Barcode Scanner (Focus & Scan / Press Enter)</label>
+          <label class="form-label fw-semibold small text-dark"><i class="fa-solid fa-barcode text-primary me-1"></i> Quick Barcode / SKU Scanner</label>
           <div class="input-group">
-            <span class="input-group-text bg-light"><i class="bi bi-barcode"></i></span>
-            <input type="text" id="barcodeScanInput" class="form-control font-monospace" placeholder="Scan SKU / Barcode..." autofocus>
+            <span class="input-group-text bg-light"><i class="fa-solid fa-upc-scan text-muted"></i></span>
+            <input type="text" id="barcodeScanInput" class="form-control font-monospace" placeholder="Scan barcode or press Enter..." autofocus>
           </div>
         </div>
         <div class="col-md-6">
-          <label class="form-label fw-semibold small text-muted"><i class="bi bi-search me-1"></i> Search Catalog Name / Brand</label>
-          <input type="text" id="posSearchInput" class="form-control" placeholder="Type product name (e.g. Milk, Maggi)...">
+          <label class="form-label fw-semibold small text-dark"><i class="fa-solid fa-magnifying-glass text-primary me-1"></i> Search Catalog Name / Brand</label>
+          <input type="text" id="posSearchInput" class="form-control" placeholder="Type to filter catalog (e.g. Milk, Maggi)...">
         </div>
       </div>
 
       <!-- Quick Category Filter Pills -->
       <div class="d-flex gap-2 overflow-auto pt-3 mt-2 border-top">
-        <button class="btn btn-sm btn-light border pos-cat-pill active" data-cat-id="all">All Products</button>
+        <button class="btn btn-sm btn-light border pos-cat-pill active" data-cat-id="all">
+          <i class="fa-solid fa-layer-group me-1"></i> All Items
+        </button>
         {% for cat in products|map(attribute='category')|unique(attribute='id') %}
-          <button class="btn btn-sm btn-light border pos-cat-pill" data-cat-id="{{ cat.id }}">{{ cat.name }}</button>
+          <button class="btn btn-sm btn-light border pos-cat-pill" data-cat-id="{{ cat.id }}">
+            <i class="fa-solid fa-tag text-muted me-1"></i> {{ cat.name }}
+          </button>
         {% endfor %}
       </div>
     </div>
@@ -59,25 +63,52 @@
              data-category-id="{{ p.category_id }}">
           <div>
             <div class="d-flex justify-content-between align-items-start mb-2">
-              <span class="badge bg-light text-secondary border small">{{ p.brand }}</span>
+              <span class="badge bg-light text-dark border small">{{ p.brand }}</span>
               <span class="badge {% if p.quantity <= p.min_stock_level %}badge-low-stock{% else %}badge-in-stock{% endif %}">
-                {{ p.quantity }} {{ p.unit }} left
+                {{ p.quantity }} {{ p.unit }}
               </span>
             </div>
-            <h6 class="fw-bold text-dark mb-1 text-truncate" title="{{ p.name }}">{{ p.name }}</h6>
-            <div class="font-monospace text-muted small mb-2">SKU: {{ p.sku }}</div>
+            <div class="d-flex align-items-start gap-2 mb-2">
+              <div class="product-icon-avatar bg-primary-subtle text-primary" style="width: 32px; height: 32px; font-size: 0.95rem;">
+                {% if 'dairy' in p.category.name|lower %}
+                  <i class="fa-solid fa-cheese"></i>
+                {% elif 'bev' in p.category.name|lower %}
+                  <i class="fa-solid fa-wine-bottle"></i>
+                {% elif 'snack' in p.category.name|lower %}
+                  <i class="fa-solid fa-cookie-bite"></i>
+                {% elif 'groc' in p.category.name|lower %}
+                  <i class="fa-solid fa-wheat-awn"></i>
+                {% elif 'care' in p.category.name|lower %}
+                  <i class="fa-solid fa-pump-soap"></i>
+                {% elif 'clean' in p.category.name|lower %}
+                  <i class="fa-solid fa-spray-can-sparkles"></i>
+                {% elif 'bake' in p.category.name|lower %}
+                  <i class="fa-solid fa-bread-slice"></i>
+                {% elif 'fruit' in p.category.name|lower or 'veg' in p.category.name|lower %}
+                  <i class="fa-solid fa-apple-whole"></i>
+                {% elif 'froz' in p.category.name|lower %}
+                  <i class="fa-solid fa-snowflake"></i>
+                {% else %}
+                  <i class="fa-solid fa-box"></i>
+                {% endif %}
+              </div>
+              <div class="overflow-hidden">
+                <h6 class="fw-bold text-dark mb-0 text-truncate" title="{{ p.name }}">{{ p.name }}</h6>
+                <div class="font-monospace text-muted small" style="font-size: 0.72rem;">{{ p.sku }}</div>
+              </div>
+            </div>
           </div>
           <div class="d-flex justify-content-between align-items-center pt-2 border-top">
             <span class="fw-bold fs-5 text-primary">₹{{ "{:,.2f}".format(p.selling_price) }}</span>
-            <button class="btn btn-sm btn-primary rounded-circle" style="width: 32px; height: 32px; padding: 0;" title="Add to Cart">
-              <i class="bi bi-plus-lg"></i>
+            <button class="btn btn-sm btn-primary rounded-circle" style="width: 34px; height: 34px; padding: 0;" title="Add to Cart">
+              <i class="fa-solid fa-plus"></i>
             </button>
           </div>
         </div>
       </div>
       {% else %}
       <div class="col-12 text-center py-5 text-muted">
-        <i class="bi bi-cart-x fs-1 text-slate-300 d-block mb-2"></i>
+        <i class="fa-solid fa-cart-arrow-down fs-1 text-slate-300 d-block mb-2"></i>
         No active products with available stock found.
       </div>
       {% endfor %}
@@ -85,16 +116,16 @@
   </div>
 
   <!-- RIGHT: BILLING CART PANEL -->
-  <div class="pos-cart-panel">
+  <div class="pos-cart-panel shadow-sm">
     <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
       <div>
-        <h5 class="fw-bold mb-0"><i class="bi bi-bag-check text-primary me-2"></i>Current Cart</h5>
-        <div class="text-muted small">Items in checkout session</div>
+        <h5 class="fw-bold mb-0"><i class="fa-solid fa-cart-shopping text-primary me-2"></i>Checkout Cart</h5>
+        <div class="text-muted small">Current customer session</div>
       </div>
       <div class="d-flex align-items-center gap-2">
         <span class="badge bg-primary rounded-pill px-2 py-1" id="cartBadgeCount">0</span>
         <button class="btn btn-sm btn-light text-danger" id="clearCartBtn" title="Clear Cart">
-          <i class="bi bi-trash"></i>
+          <i class="fa-solid fa-trash-can"></i>
         </button>
       </div>
     </div>
@@ -105,7 +136,7 @@
     </div>
 
     <div id="cartEmptyState" class="p-5 text-center text-muted">
-      <i class="bi bi-cart3 fs-1 text-slate-300 d-block mb-2"></i>
+      <i class="fa-solid fa-basket-shopping fs-1 text-slate-300 d-block mb-3"></i>
       Cart is currently empty.<br>
       <span class="small">Click products on the left or scan barcodes to begin billing.</span>
     </div>
@@ -115,27 +146,27 @@
       <!-- Customer Information -->
       <div class="row g-2 mb-3">
         <div class="col-6">
-          <label class="form-label small fw-semibold text-muted mb-1">Customer Name</label>
+          <label class="form-label small fw-semibold text-muted mb-1"><i class="fa-solid fa-user me-1"></i> Customer Name</label>
           <input type="text" id="customerNameInput" class="form-control form-control-sm" value="Walk-in Customer">
         </div>
         <div class="col-6">
-          <label class="form-label small fw-semibold text-muted mb-1">Mobile / Phone</label>
+          <label class="form-label small fw-semibold text-muted mb-1"><i class="fa-solid fa-phone me-1"></i> Mobile / Phone</label>
           <input type="tel" id="customerPhoneInput" class="form-control form-control-sm" placeholder="+91 98...">
         </div>
       </div>
 
       <!-- Payment Method Selection -->
       <div class="mb-3">
-        <label class="form-label small fw-semibold text-muted mb-1">Payment Method</label>
+        <label class="form-label small fw-semibold text-muted mb-1"><i class="fa-solid fa-credit-card me-1"></i> Payment Mode</label>
         <div class="btn-group w-100" role="group">
           <input type="radio" class="btn-check" name="payment_method" id="payCash" value="cash" checked>
-          <label class="btn btn-sm btn-outline-primary" for="payCash"><i class="bi bi-cash me-1"></i> Cash</label>
+          <label class="btn btn-sm btn-outline-primary" for="payCash"><i class="fa-solid fa-money-bill-wave me-1"></i> Cash</label>
 
           <input type="radio" class="btn-check" name="payment_method" id="payCard" value="card">
-          <label class="btn btn-sm btn-outline-primary" for="payCard"><i class="bi bi-credit-card me-1"></i> Card</label>
+          <label class="btn btn-sm btn-outline-primary" for="payCard"><i class="fa-solid fa-credit-card me-1"></i> Card</label>
 
           <input type="radio" class="btn-check" name="payment_method" id="payUPI" value="upi">
-          <label class="btn btn-sm btn-outline-primary" for="payUPI"><i class="bi bi-qr-code-scan me-1"></i> UPI</label>
+          <label class="btn btn-sm btn-outline-primary" for="payUPI"><i class="fa-solid fa-qrcode me-1"></i> UPI</label>
         </div>
       </div>
 
@@ -147,15 +178,15 @@
 
       <div class="d-flex justify-content-between align-items-center small text-muted mb-1">
         <span>Store GST / Tax (%):</span>
-        <div class="d-flex align-items-center gap-1" style="width: 110px;">
+        <div class="d-flex align-items-center gap-1" style="width: 120px;">
           <input type="number" step="0.5" min="0" id="taxRateInput" class="form-control form-control-sm text-end p-1" value="{{ default_tax }}">
           <span class="fw-bold text-dark" id="posTaxText">₹0.00</span>
         </div>
       </div>
 
       <div class="d-flex justify-content-between align-items-center small text-muted mb-2">
-        <span>Flat Discount (₹):</span>
-        <div class="d-flex align-items-center gap-1" style="width: 110px;">
+        <span>Discount (₹):</span>
+        <div class="d-flex align-items-center gap-1" style="width: 120px;">
           <input type="number" step="1" min="0" id="posDiscountInput" class="form-control form-control-sm text-end p-1" value="0">
           <span class="text-danger fw-bold" id="posDiscountText">- ₹0.00</span>
         </div>
@@ -167,7 +198,7 @@
       </div>
 
       <button type="button" class="btn btn-primary w-100 py-2 fw-bold shadow" id="checkoutSubmitBtn" disabled>
-        <i class="bi bi-check-circle me-1"></i> Pay & Print Invoice (<span id="checkoutTotalBtnText">₹0.00</span>)
+        <i class="fa-solid fa-circle-check me-1"></i> Pay & Print Invoice (<span id="checkoutTotalBtnText">₹0.00</span>)
       </button>
     </div>
   </div>

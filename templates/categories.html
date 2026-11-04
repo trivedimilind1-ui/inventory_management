@@ -5,39 +5,39 @@
 <div class="page-header">
   <div>
     <h1 class="page-title">
-      <i class="bi bi-tags-fill text-primary"></i> Category Management
+      <i class="fa-solid fa-tags text-primary"></i> Category & Department Management
     </h1>
     <div class="page-subtitle">Organize supermarket aisles, product classifications, and departments</div>
   </div>
   {% if current_user.is_admin %}
   <div>
     <button class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
-      <i class="bi bi-plus-lg"></i> Add New Category
+      <i class="fa-solid fa-plus me-1"></i> Add New Category
     </button>
   </div>
   {% endif %}
 </div>
 
 <!-- Search & Info Bar -->
-<div class="card mb-4">
+<div class="card mb-4 shadow-sm">
   <div class="card-body p-3">
     <form method="GET" action="{{ url_for('categories.index') }}" class="row g-2 align-items-center">
       <div class="col-md-5">
         <div class="input-group">
-          <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+          <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
           <input type="text" name="search" class="form-control border-start-0" placeholder="Search category name or description..." value="{{ search }}">
         </div>
       </div>
       <div class="col-md-2">
-        <button type="submit" class="btn btn-primary w-100">Search</button>
+        <button type="submit" class="btn btn-primary w-100"><i class="fa-solid fa-filter me-1"></i> Filter</button>
       </div>
       {% if search %}
       <div class="col-md-2">
-        <a href="{{ url_for('categories.index') }}" class="btn btn-light w-100">Reset</a>
+        <a href="{{ url_for('categories.index') }}" class="btn btn-light w-100"><i class="fa-solid fa-rotate-left me-1"></i> Reset</a>
       </div>
       {% endif %}
       <div class="col text-end text-muted small">
-        <i class="bi bi-info-circle me-1"></i> Total {{ categories|length }} active categories
+        <i class="fa-solid fa-layer-group text-primary me-1"></i> Total {{ categories|length }} active supermarket categories
       </div>
     </form>
   </div>
@@ -50,11 +50,33 @@
     <div class="card card-hover h-100 p-3 d-flex flex-column justify-content-between">
       <div>
         <div class="d-flex align-items-center justify-content-between mb-3">
-          <div class="kpi-icon kpi-icon-indigo" style="width: 42px; height: 42px; font-size: 1.25rem;">
-            <i class="bi {{ cat.icon or 'bi-tag' }}"></i>
+          <div class="kpi-icon kpi-icon-indigo" style="width: 44px; height: 44px; font-size: 1.3rem;">
+            {% if 'dairy' in cat.name|lower %}
+              <i class="fa-solid fa-cheese"></i>
+            {% elif 'bev' in cat.name|lower %}
+              <i class="fa-solid fa-wine-bottle"></i>
+            {% elif 'snack' in cat.name|lower %}
+              <i class="fa-solid fa-cookie-bite"></i>
+            {% elif 'groc' in cat.name|lower %}
+              <i class="fa-solid fa-wheat-awn"></i>
+            {% elif 'care' in cat.name|lower %}
+              <i class="fa-solid fa-pump-soap"></i>
+            {% elif 'clean' in cat.name|lower or 'house' in cat.name|lower %}
+              <i class="fa-solid fa-spray-can-sparkles"></i>
+            {% elif 'bake' in cat.name|lower %}
+              <i class="fa-solid fa-bread-slice"></i>
+            {% elif 'fruit' in cat.name|lower or 'veg' in cat.name|lower %}
+              <i class="fa-solid fa-apple-whole"></i>
+            {% elif 'froz' in cat.name|lower %}
+              <i class="fa-solid fa-snowflake"></i>
+            {% elif 'stat' in cat.name|lower %}
+              <i class="fa-solid fa-pen-ruler"></i>
+            {% else %}
+              <i class="fa-solid fa-tag"></i>
+            {% endif %}
           </div>
           <span class="badge bg-light text-dark border">
-            {{ cat.product_count }} Products
+            <i class="fa-solid fa-boxes-stacked me-1 text-primary"></i>{{ cat.product_count }} Products
           </span>
         </div>
         <h5 class="fw-bold mb-1 text-dark">{{ cat.name }}</h5>
@@ -65,15 +87,15 @@
 
       <div class="d-flex align-items-center justify-content-between pt-2 border-top">
         <a href="{{ url_for('products.index', category=cat.id) }}" class="small fw-semibold text-primary">
-          View Items ({{ cat.product_count }}) <i class="bi bi-arrow-right"></i>
+          View Items ({{ cat.product_count }}) <i class="fa-solid fa-arrow-right ms-1"></i>
         </a>
         {% if current_user.is_admin %}
         <div class="btn-group btn-group-sm">
           <button class="btn btn-light" title="Edit" onclick="openEditCategory({{ cat.id }}, '{{ cat.name|escape }}', '{{ cat.description|escape }}', '{{ cat.icon }}')">
-            <i class="bi bi-pencil"></i>
+            <i class="fa-solid fa-pen-to-square text-secondary"></i>
           </button>
           <button class="btn btn-light text-danger" title="Delete" onclick="confirmDeleteCategory({{ cat.id }}, '{{ cat.name|escape }}', {{ cat.product_count }})">
-            <i class="bi bi-trash"></i>
+            <i class="fa-solid fa-trash-can"></i>
           </button>
         </div>
         {% endif %}
@@ -83,7 +105,7 @@
   {% else %}
   <div class="col-12">
     <div class="card p-5 text-center text-muted">
-      <i class="bi bi-tags fs-1 text-slate-300 d-block mb-2"></i>
+      <i class="fa-solid fa-tags fs-1 text-slate-300 d-block mb-2"></i>
       No categories found matching your query.
     </div>
   </div>
@@ -97,7 +119,7 @@
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title fw-bold"><i class="bi bi-plus-circle text-primary me-2"></i>Add Supermarket Category</h5>
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-folder-plus text-primary me-2"></i>Add Supermarket Category</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <form method="POST" action="{{ url_for('categories.add') }}">
@@ -107,20 +129,8 @@
             <input type="text" name="name" class="form-control" placeholder="e.g. Dairy & Frozen Foods" required>
           </div>
           <div class="mb-3">
-            <label class="form-label fw-semibold small">Bootstrap Icon Class</label>
-            <select name="icon" class="form-select">
-              <option value="bi-tag">Default Tag (bi-tag)</option>
-              <option value="bi-egg-fried">Dairy / Eggs (bi-egg-fried)</option>
-              <option value="bi-cup-straw">Beverages (bi-cup-straw)</option>
-              <option value="bi-basket">Snacks (bi-basket)</option>
-              <option value="bi-bag-check">Grocery & Staples (bi-bag-check)</option>
-              <option value="bi-heart-pulse">Personal Care (bi-heart-pulse)</option>
-              <option value="bi-droplet">Cleaning & Household (bi-droplet)</option>
-              <option value="bi-shop">Bakery (bi-shop)</option>
-              <option value="bi-apple">Fruits & Vegetables (bi-apple)</option>
-              <option value="bi-snow">Frozen (bi-snow)</option>
-              <option value="bi-pen">Stationery (bi-pen)</option>
-            </select>
+            <label class="form-label fw-semibold small">Bootstrap / FontAwesome Icon Class</label>
+            <input type="text" name="icon" class="form-control" value="fa-solid fa-tag">
           </div>
           <div class="mb-3">
             <label class="form-label fw-semibold small">Description</label>
@@ -129,7 +139,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary fw-bold">Create Category</button>
+          <button type="submit" class="btn btn-primary fw-bold"><i class="fa-solid fa-check me-1"></i> Create Category</button>
         </div>
       </form>
     </div>
@@ -141,7 +151,7 @@
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square text-primary me-2"></i>Edit Category</h5>
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-pen-to-square text-primary me-2"></i>Edit Category</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <form id="editCategoryForm" method="POST" action="">
@@ -151,7 +161,7 @@
             <input type="text" name="name" id="editCatName" class="form-control" required>
           </div>
           <div class="mb-3">
-            <label class="form-label fw-semibold small">Bootstrap Icon Class</label>
+            <label class="form-label fw-semibold small">Icon Class</label>
             <input type="text" name="icon" id="editCatIcon" class="form-control">
           </div>
           <div class="mb-3">
@@ -173,13 +183,13 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header border-0 pb-0">
-        <h5 class="modal-title fw-bold text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Delete Category</h5>
+        <h5 class="modal-title fw-bold text-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i>Delete Category</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body py-3">
         <p>Are you sure you want to delete category <strong id="deleteCatName"></strong>?</p>
         <div id="deleteWarningBlock" class="alert alert-danger d-none">
-          <i class="bi bi-exclamation-circle-fill me-1"></i>
+          <i class="fa-solid fa-circle-exclamation me-1"></i>
           This category has active products. You must reassign or delete the products before deleting this category.
         </div>
       </div>

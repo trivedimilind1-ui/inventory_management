@@ -5,29 +5,29 @@
 <div class="page-header">
   <div>
     <h1 class="page-title">
-      <i class="bi bi-bar-chart-fill text-primary"></i> Reports & Financial Analytics
+      <i class="fa-solid fa-chart-line text-primary"></i> Reports & Financial Analytics
     </h1>
     <div class="page-subtitle">Revenue metrics, COGS gross profit calculations, stock turnover, and CSV exports</div>
   </div>
   <!-- CSV Export Dropdown -->
   <div class="dropdown">
     <button class="btn btn-primary dropdown-toggle shadow-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-      <i class="bi bi-download me-1"></i> Export Reports (CSV)
+      <i class="fa-solid fa-file-export me-1"></i> Export Reports (CSV)
     </button>
     <ul class="dropdown-menu dropdown-menu-end shadow border-0">
       <li>
         <a class="dropdown-item py-2" href="{{ url_for('reports.export_sales_csv') }}">
-          <i class="bi bi-file-earmark-spreadsheet me-2 text-primary"></i> Sales Transactions CSV
+          <i class="fa-solid fa-file-invoice-dollar me-2 text-primary"></i> Sales Transactions CSV
         </a>
       </li>
       <li>
         <a class="dropdown-item py-2" href="{{ url_for('reports.export_inventory_csv') }}">
-          <i class="bi bi-boxes me-2 text-success"></i> Inventory Valuation CSV
+          <i class="fa-solid fa-boxes-stacked me-2 text-success"></i> Inventory Valuation CSV
         </a>
       </li>
       <li>
         <a class="dropdown-item py-2" href="{{ url_for('reports.export_movements_csv') }}">
-          <i class="bi bi-arrow-left-right me-2 text-warning"></i> Stock Movement Audit CSV
+          <i class="fa-solid fa-dolly me-2 text-warning"></i> Stock Movement Audit CSV
         </a>
       </li>
     </ul>
@@ -39,10 +39,10 @@
   <div class="card-body p-3">
     <form method="GET" action="{{ url_for('reports.index') }}" class="row g-2 align-items-center">
       <div class="col-md-4 d-flex gap-1">
-        <a href="{{ url_for('reports.index', period='today') }}" class="btn btn-sm {% if summary.period == 'today' %}btn-primary{% else %}btn-light{% endif %} flex-fill">Today</a>
-        <a href="{{ url_for('reports.index', period='week') }}" class="btn btn-sm {% if summary.period == 'week' %}btn-primary{% else %}btn-light{% endif %} flex-fill">Last 7 Days</a>
-        <a href="{{ url_for('reports.index', period='month') }}" class="btn btn-sm {% if summary.period == 'month' %}btn-primary{% else %}btn-light{% endif %} flex-fill">Last 30 Days</a>
-        <a href="{{ url_for('reports.index', period='year') }}" class="btn btn-sm {% if summary.period == 'year' %}btn-primary{% else %}btn-light{% endif %} flex-fill">This Year</a>
+        <a href="{{ url_for('reports.index', period='today') }}" class="btn btn-sm {% if summary.period == 'today' %}btn-primary{% else %}btn-light{% endif %} flex-fill"><i class="fa-solid fa-calendar-day me-1"></i> Today</a>
+        <a href="{{ url_for('reports.index', period='week') }}" class="btn btn-sm {% if summary.period == 'week' %}btn-primary{% else %}btn-light{% endif %} flex-fill"><i class="fa-solid fa-calendar-week me-1"></i> 7 Days</a>
+        <a href="{{ url_for('reports.index', period='month') }}" class="btn btn-sm {% if summary.period == 'month' %}btn-primary{% else %}btn-light{% endif %} flex-fill"><i class="fa-regular fa-calendar me-1"></i> 30 Days</a>
+        <a href="{{ url_for('reports.index', period='year') }}" class="btn btn-sm {% if summary.period == 'year' %}btn-primary{% else %}btn-light{% endif %} flex-fill"><i class="fa-solid fa-calendar me-1"></i> Year</a>
       </div>
 
       <div class="col-md-3">
@@ -59,7 +59,7 @@
       </div>
       <div class="col-md-2">
         <input type="hidden" name="period" value="custom">
-        <button type="submit" class="btn btn-sm btn-primary w-100">Apply Custom</button>
+        <button type="submit" class="btn btn-sm btn-primary w-100"><i class="fa-solid fa-filter me-1"></i> Apply Filter</button>
       </div>
     </form>
   </div>
@@ -70,44 +70,44 @@
   <div class="col-xl-3 col-md-6">
     <div class="kpi-card kpi-primary">
       <div>
-        <div class="kpi-label">Gross Revenue</div>
+        <div class="kpi-label"><i class="fa-solid fa-money-bill-trend-up text-primary"></i> Gross Revenue</div>
         <div class="kpi-value text-primary">₹{{ "{:,.2f}".format(summary.total_revenue) }}</div>
-        <div class="kpi-sub text-muted">{{ summary.total_orders }} orders across selected range</div>
+        <div class="kpi-sub text-muted"><i class="fa-solid fa-receipt me-1"></i>{{ summary.total_orders }} orders across selected range</div>
       </div>
-      <div class="kpi-icon kpi-icon-indigo"><i class="bi bi-cash-stack"></i></div>
+      <div class="kpi-icon kpi-icon-indigo"><i class="fa-solid fa-cash-register"></i></div>
     </div>
   </div>
 
   <div class="col-xl-3 col-md-6">
     <div class="kpi-card kpi-success">
       <div>
-        <div class="kpi-label">Gross Profit (COGS)</div>
+        <div class="kpi-label"><i class="fa-solid fa-piggy-bank text-success"></i> Gross Profit (COGS)</div>
         <div class="kpi-value text-success">₹{{ "{:,.2f}".format(summary.gross_profit) }}</div>
-        <div class="kpi-sub text-success"><i class="bi bi-graph-up-arrow"></i> Margin: {{ summary.profit_margin }}%</div>
+        <div class="kpi-sub text-success"><i class="fa-solid fa-arrow-trend-up me-1"></i> Margin: {{ summary.profit_margin }}%</div>
       </div>
-      <div class="kpi-icon kpi-icon-green"><i class="bi bi-piggy-bank"></i></div>
+      <div class="kpi-icon kpi-icon-green"><i class="fa-solid fa-vault"></i></div>
     </div>
   </div>
 
   <div class="col-xl-3 col-md-6">
     <div class="kpi-card kpi-purple">
       <div>
-        <div class="kpi-label">Avg Order Value (AOV)</div>
+        <div class="kpi-label"><i class="fa-solid fa-basket-shopping text-purple"></i> Avg Order Value (AOV)</div>
         <div class="kpi-value" style="color: var(--secondary);">₹{{ "{:,.2f}".format(summary.avg_order_value) }}</div>
-        <div class="kpi-sub text-muted">{{ summary.units_sold }} total units sold</div>
+        <div class="kpi-sub text-muted"><i class="fa-solid fa-cubes me-1"></i>{{ summary.units_sold }} total units sold</div>
       </div>
-      <div class="kpi-icon kpi-icon-purple"><i class="bi bi-cart-check"></i></div>
+      <div class="kpi-icon kpi-icon-purple"><i class="fa-solid fa-bag-shopping"></i></div>
     </div>
   </div>
 
   <div class="col-xl-3 col-md-6">
-    <div class="kpi-card kpi-primary">
+    <div class="kpi-card kpi-info">
       <div>
-        <div class="kpi-label">Inventory Held (Cost)</div>
-        <div class="kpi-value">₹{{ "{:,.2f}".format(summary.inventory_cost) }}</div>
-        <div class="kpi-sub text-muted">Retail value: ₹{{ "{:,.0f}".format(summary.inventory_retail) }}</div>
+        <div class="kpi-label"><i class="fa-solid fa-warehouse text-info"></i> Inventory Held (Cost)</div>
+        <div class="kpi-value" style="color: #0284c7;">₹{{ "{:,.2f}".format(summary.inventory_cost) }}</div>
+        <div class="kpi-sub text-muted"><i class="fa-solid fa-tags me-1"></i>Retail value: ₹{{ "{:,.0f}".format(summary.inventory_retail) }}</div>
       </div>
-      <div class="kpi-icon kpi-icon-indigo"><i class="bi bi-box-seam"></i></div>
+      <div class="kpi-icon kpi-icon-cyan"><i class="fa-solid fa-boxes-stacked"></i></div>
     </div>
   </div>
 </div>

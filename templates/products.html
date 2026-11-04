@@ -5,27 +5,27 @@
 <div class="page-header">
   <div>
     <h1 class="page-title">
-      <i class="bi bi-box-seam-fill text-primary"></i> Product Management
+      <i class="fa-solid fa-boxes-stacked text-primary"></i> Supermarket Product Catalog
     </h1>
-    <div class="page-subtitle">Manage supermarket inventory catalog, SKUs, pricing, and stock thresholds</div>
+    <div class="page-subtitle">Manage inventory items, SKUs, wholesale costs, retail pricing, and minimum stock alerts</div>
   </div>
   {% if current_user.is_admin %}
   <div>
     <button class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#addProductModal">
-      <i class="bi bi-plus-lg"></i> Add New Product
+      <i class="fa-solid fa-circle-plus"></i> Add New Product
     </button>
   </div>
   {% endif %}
 </div>
 
 <!-- Filter & Search Toolbar -->
-<div class="card mb-4">
+<div class="card mb-4 shadow-sm">
   <div class="card-body p-3">
     <form method="GET" action="{{ url_for('products.index') }}" class="row g-2 align-items-center">
       <div class="col-md-3">
         <div class="input-group">
-          <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
-          <input type="text" name="search" class="form-control border-start-0" placeholder="Search name, SKU, brand..." value="{{ search }}">
+          <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+          <input type="text" name="search" class="form-control border-start-0" placeholder="Search product name, SKU, brand..." value="{{ search }}">
         </div>
       </div>
 
@@ -50,8 +50,8 @@
       <div class="col-md-2">
         <select name="status" class="form-select">
           <option value="">All Stock Levels</option>
-          <option value="low_stock" {% if selected_status == 'low_stock' %}selected{% endif %}>Low Stock Only</option>
-          <option value="out_of_stock" {% if selected_status == 'out_of_stock' %}selected{% endif %}>Out of Stock</option>
+          <option value="low_stock" {% if selected_status == 'low_stock' %}selected{% endif %}>⚠️ Low Stock Warnings</option>
+          <option value="out_of_stock" {% if selected_status == 'out_of_stock' %}selected{% endif %}>🚫 Out of Stock</option>
         </select>
       </div>
 
@@ -68,11 +68,11 @@
 
       <div class="col-md-1 d-flex gap-1">
         <button type="submit" class="btn btn-primary w-100" title="Apply Filters">
-          <i class="bi bi-funnel-fill"></i>
+          <i class="fa-solid fa-filter"></i>
         </button>
         {% if search or selected_category or selected_supplier or selected_status or sort_by != 'created_at_desc' %}
         <a href="{{ url_for('products.index') }}" class="btn btn-light" title="Reset Filters">
-          <i class="bi bi-arrow-counterclockwise"></i>
+          <i class="fa-solid fa-rotate-left"></i>
         </a>
         {% endif %}
       </div>
@@ -86,13 +86,13 @@
     <table class="table-custom">
       <thead>
         <tr>
-          <th>Product & Brand</th>
+          <th>Product Details</th>
           <th>SKU / Barcode</th>
           <th>Category</th>
-          <th>Cost / Price</th>
+          <th>Pricing (Cost / Sell)</th>
           <th>Margin</th>
-          <th>Stock Level</th>
-          <th>Expiry Date</th>
+          <th>Stock Balance</th>
+          <th>Best Before</th>
           <th class="text-end">Actions</th>
         </tr>
       </thead>
@@ -100,44 +100,71 @@
         {% for p in products %}
         <tr>
           <td>
-            <div class="fw-bold text-dark">{{ p.name }}</div>
-            <div class="text-muted small">Brand: <span class="fw-semibold">{{ p.brand }}</span></div>
+            <div class="d-flex align-items-center gap-3">
+              <div class="product-icon-avatar bg-primary-subtle text-primary">
+                {% if 'dairy' in p.category.name|lower %}
+                  <i class="fa-solid fa-cheese"></i>
+                {% elif 'bev' in p.category.name|lower %}
+                  <i class="fa-solid fa-wine-bottle"></i>
+                {% elif 'snack' in p.category.name|lower %}
+                  <i class="fa-solid fa-cookie-bite"></i>
+                {% elif 'groc' in p.category.name|lower %}
+                  <i class="fa-solid fa-wheat-awn"></i>
+                {% elif 'care' in p.category.name|lower %}
+                  <i class="fa-solid fa-pump-soap"></i>
+                {% elif 'clean' in p.category.name|lower or 'house' in p.category.name|lower %}
+                  <i class="fa-solid fa-spray-can-sparkles"></i>
+                {% elif 'bake' in p.category.name|lower %}
+                  <i class="fa-solid fa-bread-slice"></i>
+                {% elif 'fruit' in p.category.name|lower or 'veg' in p.category.name|lower %}
+                  <i class="fa-solid fa-apple-whole"></i>
+                {% elif 'froz' in p.category.name|lower %}
+                  <i class="fa-solid fa-snowflake"></i>
+                {% else %}
+                  <i class="fa-solid fa-box"></i>
+                {% endif %}
+              </div>
+              <div>
+                <div class="fw-bold text-dark">{{ p.name }}</div>
+                <div class="text-muted small">Brand: <span class="fw-semibold text-secondary">{{ p.brand }}</span></div>
+              </div>
+            </div>
           </td>
           <td>
             <span class="badge bg-light text-dark border font-monospace">{{ p.sku }}</span>
             {% if p.barcode and p.barcode != p.sku %}
-            <div class="text-muted" style="font-size: 0.75rem;">{{ p.barcode }}</div>
+            <div class="text-muted small font-monospace" style="font-size: 0.72rem;"><i class="fa-solid fa-barcode me-1"></i>{{ p.barcode }}</div>
             {% endif %}
           </td>
           <td>
-            <span class="badge bg-light text-secondary border">
-              <i class="bi {{ p.category.icon or 'bi-tag' }} me-1"></i>{{ p.category.name }}
+            <span class="badge bg-light text-dark border">
+              <i class="fa-solid fa-tag me-1 text-primary"></i>{{ p.category.name }}
             </span>
           </td>
           <td>
-            <div class="fw-bold text-dark">₹{{ "{:,.2f}".format(p.selling_price) }}</div>
+            <div class="fw-bold text-dark fs-6">₹{{ "{:,.2f}".format(p.selling_price) }}</div>
             <div class="text-muted small">Cost: ₹{{ "{:,.2f}".format(p.purchase_price) }}</div>
           </td>
           <td>
             <span class="badge {% if p.margin >= 20 %}bg-success-subtle text-success{% else %}bg-warning-subtle text-warning{% endif %}">
-              {{ p.margin }}%
+              <i class="fa-solid fa-chart-simple me-1"></i>{{ p.margin }}%
             </span>
           </td>
           <td>
-            <div class="d-flex align-items-center gap-2">
+            <div class="d-flex align-items-center gap-2 mb-1">
               <span class="fw-bold fs-6">{{ p.quantity }}</span> <span class="text-muted small">{{ p.unit }}</span>
             </div>
             {% if p.is_out_of_stock %}
-              <span class="badge badge-custom badge-out-of-stock">Out of Stock</span>
+              <span class="badge badge-custom badge-out-of-stock"><i class="fa-solid fa-circle-xmark"></i> Out of Stock</span>
             {% elif p.is_low_stock %}
-              <span class="badge badge-custom badge-low-stock">Low Stock (Min: {{ p.min_stock_level }})</span>
+              <span class="badge badge-custom badge-low-stock"><i class="fa-solid fa-triangle-exclamation"></i> Low Stock (Min: {{ p.min_stock_level }})</span>
             {% else %}
-              <span class="badge badge-custom badge-in-stock">In Stock</span>
+              <span class="badge badge-custom badge-in-stock"><i class="fa-solid fa-circle-check"></i> In Stock</span>
             {% endif %}
           </td>
           <td>
             {% if p.expiry_date %}
-              <span class="small text-muted">{{ p.expiry_date.strftime('%d %b %Y') }}</span>
+              <span class="small text-muted"><i class="fa-regular fa-calendar me-1"></i>{{ p.expiry_date.strftime('%d %b %Y') }}</span>
             {% else %}
               <span class="small text-muted">N/A</span>
             {% endif %}
@@ -145,14 +172,14 @@
           <td class="text-end">
             <div class="btn-group btn-group-sm">
               <button class="btn btn-light" title="View Details" onclick="viewProductDetails({{ p.id }})">
-                <i class="bi bi-eye"></i>
+                <i class="fa-solid fa-eye text-primary"></i>
               </button>
               {% if current_user.is_admin %}
               <button class="btn btn-light" title="Edit Product" onclick="openEditModal({{ p.id }})">
-                <i class="bi bi-pencil"></i>
+                <i class="fa-solid fa-pen-to-square text-secondary"></i>
               </button>
               <button class="btn btn-light text-danger" title="Delete Product" onclick="confirmDeleteProduct({{ p.id }}, '{{ p.name|escape }}')">
-                <i class="bi bi-trash"></i>
+                <i class="fa-solid fa-trash-can"></i>
               </button>
               {% endif %}
             </div>
@@ -161,8 +188,8 @@
         {% else %}
         <tr>
           <td colspan="8" class="text-center py-5 text-muted">
-            <i class="bi bi-box-seam fs-1 text-slate-300 d-block mb-2"></i>
-            No products match the selected criteria.
+            <i class="fa-solid fa-box-open fs-1 text-slate-300 d-block mb-3"></i>
+            No supermarket products match the selected criteria.
           </td>
         </tr>
         {% endfor %}
@@ -206,32 +233,32 @@
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title fw-bold" id="addProductModalLabel"><i class="bi bi-box-seam text-primary me-2"></i>Add New Supermarket Product</h5>
+        <h5 class="modal-title fw-bold" id="addProductModalLabel"><i class="fa-solid fa-circle-plus text-primary me-2"></i>Add Supermarket Product</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <form method="POST" action="{{ url_for('products.add') }}">
         <div class="modal-body">
           <div class="row g-3">
             <div class="col-md-8">
-              <label class="form-label fw-semibold small">Product Name <span class="text-danger">*</span></label>
+              <label class="form-label fw-semibold small"><i class="fa-solid fa-tag text-primary me-1"></i> Product Name <span class="text-danger">*</span></label>
               <input type="text" name="name" class="form-control" placeholder="e.g. Amul Butter 500g" required>
             </div>
             <div class="col-md-4">
-              <label class="form-label fw-semibold small">Brand <span class="text-danger">*</span></label>
+              <label class="form-label fw-semibold small"><i class="fa-solid fa-copyright text-primary me-1"></i> Brand <span class="text-danger">*</span></label>
               <input type="text" name="brand" class="form-control" placeholder="e.g. Amul" required>
             </div>
 
             <div class="col-md-6">
-              <label class="form-label fw-semibold small">SKU (Stock Keeping Unit) <span class="text-danger">*</span></label>
+              <label class="form-label fw-semibold small"><i class="fa-solid fa-barcode text-primary me-1"></i> SKU (Unique Identifier) <span class="text-danger">*</span></label>
               <input type="text" name="sku" class="form-control font-monospace" placeholder="e.g. DAI-AMUL-002" required>
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-semibold small">Barcode Number</label>
+              <label class="form-label fw-semibold small"><i class="fa-solid fa-upc-scan text-primary me-1"></i> Barcode EAN/UPC</label>
               <input type="text" name="barcode" class="form-control font-monospace" placeholder="e.g. 8901262010051">
             </div>
 
             <div class="col-md-6">
-              <label class="form-label fw-semibold small">Category <span class="text-danger">*</span></label>
+              <label class="form-label fw-semibold small"><i class="fa-solid fa-folder-tree text-primary me-1"></i> Category <span class="text-danger">*</span></label>
               <select name="category_id" class="form-select" required>
                 <option value="">Select Category</option>
                 {% for c in categories %}
@@ -240,7 +267,7 @@
               </select>
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-semibold small">Supplier</label>
+              <label class="form-label fw-semibold small"><i class="fa-solid fa-truck-field text-primary me-1"></i> Supplier</label>
               <select name="supplier_id" class="form-select">
                 <option value="">None / Direct Procurement</option>
                 {% for s in suppliers %}
@@ -250,24 +277,24 @@
             </div>
 
             <div class="col-md-3">
-              <label class="form-label fw-semibold small">Purchase Cost (₹) <span class="text-danger">*</span></label>
+              <label class="form-label fw-semibold small"><i class="fa-solid fa-indian-rupee-sign text-muted me-1"></i> Cost Price (₹) <span class="text-danger">*</span></label>
               <input type="number" step="0.01" min="0" name="purchase_price" class="form-control" placeholder="0.00" required>
             </div>
             <div class="col-md-3">
-              <label class="form-label fw-semibold small">Selling Price (₹) <span class="text-danger">*</span></label>
+              <label class="form-label fw-semibold small"><i class="fa-solid fa-indian-rupee-sign text-primary me-1"></i> Selling Price (₹) <span class="text-danger">*</span></label>
               <input type="number" step="0.01" min="0" name="selling_price" class="form-control" placeholder="0.00" required>
             </div>
             <div class="col-md-3">
-              <label class="form-label fw-semibold small">Initial Stock <span class="text-danger">*</span></label>
+              <label class="form-label fw-semibold small"><i class="fa-solid fa-boxes-packing text-muted me-1"></i> Opening Stock <span class="text-danger">*</span></label>
               <input type="number" min="0" name="quantity" class="form-control" value="0" required>
             </div>
             <div class="col-md-3">
-              <label class="form-label fw-semibold small">Min Stock Alert <span class="text-danger">*</span></label>
+              <label class="form-label fw-semibold small"><i class="fa-solid fa-triangle-exclamation text-warning me-1"></i> Min Alert <span class="text-danger">*</span></label>
               <input type="number" min="1" name="min_stock_level" class="form-control" value="10" required>
             </div>
 
             <div class="col-md-4">
-              <label class="form-label fw-semibold small">Unit of Measure</label>
+              <label class="form-label fw-semibold small"><i class="fa-solid fa-scale-balanced text-muted me-1"></i> Unit of Measure</label>
               <select name="unit" class="form-select">
                 <option value="pcs">Pieces (pcs)</option>
                 <option value="pack">Pack</option>
@@ -279,16 +306,16 @@
               </select>
             </div>
             <div class="col-md-4">
-              <label class="form-label fw-semibold small">Expiry Date</label>
+              <label class="form-label fw-semibold small"><i class="fa-regular fa-calendar-check text-muted me-1"></i> Expiry Date</label>
               <input type="date" name="expiry_date" class="form-control">
             </div>
             <div class="col-md-4">
-              <label class="form-label fw-semibold small">Aisle / Shelf Info</label>
-              <input type="text" name="shelf" class="form-control" placeholder="Aisle 4, Bay B">
+              <label class="form-label fw-semibold small"><i class="fa-solid fa-map-pin text-muted me-1"></i> Shelf / Aisle Location</label>
+              <input type="text" name="shelf" class="form-control" placeholder="Aisle 4, Shelf B">
             </div>
 
             <div class="col-12">
-              <label class="form-label fw-semibold small">Product Description</label>
+              <label class="form-label fw-semibold small"><i class="fa-solid fa-align-left text-muted me-1"></i> Product Description</label>
               <textarea name="description" class="form-control" rows="2" placeholder="Brief description of product features, ingredients, or storage instructions..."></textarea>
             </div>
           </div>
@@ -296,7 +323,7 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
           <button type="submit" class="btn btn-primary fw-bold">
-            <i class="bi bi-check-circle me-1"></i> Save Product
+            <i class="fa-solid fa-check me-1"></i> Save Product
           </button>
         </div>
       </form>
@@ -309,7 +336,7 @@
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square text-primary me-2"></i>Edit Product</h5>
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-pen-to-square text-primary me-2"></i>Edit Product</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <form id="editProductForm" method="POST" action="">
@@ -352,7 +379,7 @@
             </div>
 
             <div class="col-md-3">
-              <label class="form-label fw-semibold small">Purchase Cost (₹) <span class="text-danger">*</span></label>
+              <label class="form-label fw-semibold small">Cost Price (₹) <span class="text-danger">*</span></label>
               <input type="number" step="0.01" min="0" name="purchase_price" id="editPurchasePrice" class="form-control" required>
             </div>
             <div class="col-md-3">
@@ -405,23 +432,23 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <div class="p-3 bg-light rounded-3 mb-3 text-center">
-          <div class="fw-bold fs-5 text-dark" id="detailSku">SKU</div>
-          <div class="text-muted small font-monospace" id="detailBarcode">Barcode</div>
+        <div class="p-3 bg-light rounded-3 mb-3 text-center border">
+          <div class="fw-bold fs-5 text-dark font-monospace" id="detailSku">SKU</div>
+          <div class="text-muted small font-monospace" id="detailBarcode"><i class="fa-solid fa-barcode me-1"></i>Barcode</div>
         </div>
         <table class="table table-sm table-borderless">
           <tbody>
-            <tr><td class="text-muted">Brand:</td><td class="fw-bold" id="detailBrand"></td></tr>
-            <tr><td class="text-muted">Category:</td><td class="fw-bold" id="detailCategory"></td></tr>
-            <tr><td class="text-muted">Supplier:</td><td class="fw-bold" id="detailSupplier"></td></tr>
-            <tr><td class="text-muted">Selling Price:</td><td class="fw-bold text-primary" id="detailSellingPrice"></td></tr>
-            <tr><td class="text-muted">Purchase Cost:</td><td class="fw-bold" id="detailPurchasePrice"></td></tr>
-            <tr><td class="text-muted">Gross Margin:</td><td class="fw-bold text-success" id="detailMargin"></td></tr>
-            <tr><td class="text-muted">Current Stock:</td><td class="fw-bold" id="detailQuantity"></td></tr>
-            <tr><td class="text-muted">Min Threshold:</td><td class="fw-bold" id="detailMinStock"></td></tr>
-            <tr><td class="text-muted">Inventory Value:</td><td class="fw-bold" id="detailTotalValue"></td></tr>
-            <tr><td class="text-muted">Expiry Date:</td><td class="fw-bold" id="detailExpiry"></td></tr>
-            <tr><td class="text-muted">Description:</td><td class="small" id="detailDesc"></td></tr>
+            <tr><td class="text-muted"><i class="fa-solid fa-copyright text-muted me-2"></i>Brand:</td><td class="fw-bold" id="detailBrand"></td></tr>
+            <tr><td class="text-muted"><i class="fa-solid fa-tags text-muted me-2"></i>Category:</td><td class="fw-bold" id="detailCategory"></td></tr>
+            <tr><td class="text-muted"><i class="fa-solid fa-truck text-muted me-2"></i>Supplier:</td><td class="fw-bold" id="detailSupplier"></td></tr>
+            <tr><td class="text-muted"><i class="fa-solid fa-tag text-primary me-2"></i>Selling Price:</td><td class="fw-bold text-primary" id="detailSellingPrice"></td></tr>
+            <tr><td class="text-muted"><i class="fa-solid fa-coins text-muted me-2"></i>Cost Price:</td><td class="fw-bold" id="detailPurchasePrice"></td></tr>
+            <tr><td class="text-muted"><i class="fa-solid fa-chart-line text-success me-2"></i>Gross Margin:</td><td class="fw-bold text-success" id="detailMargin"></td></tr>
+            <tr><td class="text-muted"><i class="fa-solid fa-boxes-stacked text-muted me-2"></i>On-Hand Stock:</td><td class="fw-bold" id="detailQuantity"></td></tr>
+            <tr><td class="text-muted"><i class="fa-solid fa-bell text-warning me-2"></i>Safety Threshold:</td><td class="fw-bold" id="detailMinStock"></td></tr>
+            <tr><td class="text-muted"><i class="fa-solid fa-vault text-muted me-2"></i>Inventory Value:</td><td class="fw-bold" id="detailTotalValue"></td></tr>
+            <tr><td class="text-muted"><i class="fa-regular fa-calendar text-muted me-2"></i>Expiry Date:</td><td class="fw-bold" id="detailExpiry"></td></tr>
+            <tr><td class="text-muted"><i class="fa-solid fa-align-left text-muted me-2"></i>Description:</td><td class="small" id="detailDesc"></td></tr>
           </tbody>
         </table>
       </div>
@@ -437,7 +464,7 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header border-0 pb-0">
-        <h5 class="modal-title fw-bold text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Confirm Removal</h5>
+        <h5 class="modal-title fw-bold text-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i>Confirm Removal</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body py-3">
@@ -447,7 +474,7 @@
       <div class="modal-footer border-0 pt-0">
         <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
         <form id="deleteProductForm" method="POST" action="">
-          <button type="submit" class="btn btn-danger">Yes, Delete Product</button>
+          <button type="submit" class="btn btn-danger"><i class="fa-solid fa-trash-can me-1"></i> Yes, Delete Product</button>
         </form>
       </div>
     </div>

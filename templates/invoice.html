@@ -3,15 +3,15 @@
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3 no-print">
-  <a href="{{ url_for('sales.index') }}" class="btn btn-light border">
-    <i class="bi bi-arrow-left me-1"></i> Back to POS Terminal
+  <a href="{{ url_for('sales.index') }}" class="btn btn-light border shadow-sm">
+    <i class="fa-solid fa-arrow-left me-1"></i> Back to POS Terminal
   </a>
   <div class="d-flex gap-2">
     <a href="{{ url_for('sales.index') }}" class="btn btn-outline-primary">
-      <i class="bi bi-cart-plus me-1"></i> New Transaction
+      <i class="fa-solid fa-cart-plus me-1"></i> New Transaction (F2)
     </a>
-    <button class="btn btn-primary" onclick="window.print()">
-      <i class="bi bi-printer-fill me-1"></i> Print Tax Invoice
+    <button class="btn btn-primary shadow-sm" onclick="window.print()">
+      <i class="fa-solid fa-print me-1"></i> Print Tax Invoice
     </button>
   </div>
 </div>
@@ -20,17 +20,17 @@
   <!-- Supermarket Brand & Header -->
   <div class="text-center pb-3 border-bottom mb-3">
     <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
-      <div class="brand-icon" style="width: 32px; height: 32px; font-size: 1.1rem;">
-        <i class="bi bi-cart3"></i>
+      <div class="brand-icon" style="width: 36px; height: 36px; font-size: 1.15rem;">
+        <i class="fa-solid fa-basket-shopping"></i>
       </div>
       <h3 class="fw-bold mb-0 text-dark">{{ store_name }}</h3>
     </div>
-    <div class="text-muted small">{{ store_tagline }}</div>
+    <div class="text-muted small fw-semibold">{{ store_tagline }}</div>
     <div class="text-muted small">{{ store_address }}</div>
     <div class="text-muted small">
-      <strong>Tel:</strong> {{ store_phone }} &bull; <strong>Email:</strong> {{ store_email }}
+      <strong><i class="fa-solid fa-phone me-1"></i>Tel:</strong> {{ store_phone }} &bull; <strong><i class="fa-solid fa-envelope me-1"></i>Email:</strong> {{ store_email }}
     </div>
-    <div class="fw-bold text-dark small mt-1">GSTIN: <span class="font-monospace">{{ store_gstin }}</span></div>
+    <div class="fw-bold text-dark small mt-1">GSTIN: <span class="font-monospace text-primary">{{ store_gstin }}</span></div>
   </div>
 
   <!-- Invoice Meta Details -->

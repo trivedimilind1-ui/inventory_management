@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 6000);
   });
 
-  // 4. Quick Topbar Global Search
+  // 4. Quick Topbar Global Search & Keyboard Shortcuts
   const globalSearchInput = document.getElementById('globalSearchInput');
   if (globalSearchInput) {
     globalSearchInput.addEventListener('keydown', function(e) {
@@ -55,4 +55,18 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   }
+
+  // Keyboard Shortcuts: Ctrl+K / Cmd+K for search, F2 for POS
+  document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      if (globalSearchInput) {
+        globalSearchInput.focus();
+        globalSearchInput.select();
+      }
+    } else if (e.key === 'F2') {
+      e.preventDefault();
+      window.location.href = '/sales/';
+    }
+  });
 });
