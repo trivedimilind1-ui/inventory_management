@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% block title %}Tax Invoice {{ sale.invoice_no }} - SmartStock{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 no-print">
+  <a href="{{ url_for('sales.index') }}" class="btn btn-light border">
+    <i class="bi bi-arrow-left me-1"></i> Back to POS Terminal
+  </a>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('sales.index') }}" class="btn btn-outline-primary">
+      <i class="bi bi-cart-plus me-1"></i> New Transaction
+    </a>
+    <button class="btn btn-primary" onclick="window.print()">
+      <i class="bi bi-printer-fill me-1"></i> Print Tax Invoice
+    </button>
+  </div>
+</div>
+
+<div class="invoice-box">
+  <!-- Supermarket Brand & Header -->
+  <div class="text-center pb-3 border-bottom mb-3">
+    <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
+      <div class="brand-icon" style="width: 32px; height: 32px; font-size: 1.1rem;">
+        <i class="bi bi-cart3"></i>
+      </div>
+      <h3 class="fw-bold mb-0 text-dark">{{ store_name }}</h3>
+    </div>
+    <div class="text-muted small">{{ store_tagline }}</div>
+    <div class="text-muted small">{{ store_address }}</div>
+    <div class="text-muted small">
+      <strong>Tel:</strong> {{ store_phone }} &bull; <strong>Email:</strong> {{ store_email }}
+    </div>
+    <div class="fw-bold text-dark small mt-1">GSTIN: <span class="font-monospace">{{ store_gstin }}</span></div>
+  </div>
+
+  <!-- Invoice Meta Details -->
+  <div class="row g-2 mb-3 small">
+    <div class="col-6">
+      <div><strong>Invoice No:</strong> <span class="font-monospace text-primary fw-bold">{{ sale.invoice_no }}</span></div>
+      <div><strong>Date & Time:</strong> {{ sale.created_at.strftime('%d-%b-%Y %I:%M %p') }}</div>
+      <div><strong>Cashier:</strong> {{ sale.cashier.full_name if sale.cashier else 'System' }}</div>
+    </div>
+    <div class="col-6 text-end">
+      <div><strong>Customer:</strong> {{ sale.customer_name }}</div>
+      <div><strong>Contact:</strong> {{ sale.customer_phone or 'N/A' }}</div>
+      <div><strong>Payment Mode:</strong> <span class="badge bg-light text-dark border text-uppercase">{{ sale.payment_method }}</span></div>
+    </div>
+  </div>
+
+  <!-- Items Table -->
+  <table class="table table-sm table-bordered mb-3 small">
+    <thead class="table-light">
+      <tr>
+        <th style="width: 5%;">#</th>
+        <th>Item Description</th>
+        <th class="text-center" style="width: 12%;">Qty</th>
+        <th class="text-end" style="width: 20%;">Rate (₹)</th>
+        <th class="text-end" style="width: 20%;">Amount (₹)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in sale.items %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>
+          <div class="fw-semibold text-dark">{{ item.product_name }}</div>
+          <div class="text-muted font-monospace" style="font-size: 0.72rem;">SKU: {{ item.sku }}</div>
+        </td>
+        <td class="text-center fw-bold">{{ item.quantity }}</td>
+        <td class="text-end">₹{{ "{:,.2f}".format(item.unit_price) }}</td>
+        <td class="text-end fw-bold">₹{{ "{:,.2f}".format(item.line_total) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Calculation Summary -->
+  <div class="row g-2 justify-content-end mb-3">
+    <div class="col-sm-6">
+      <table class="table table-sm table-borderless small mb-0">
+        <tbody>
+          <tr>
+            <td class="text-muted">Items Subtotal:</td>
+            <td class="text-end fw-bold">₹{{ "{:,.2f}".format(sale.subtotal) }}</td>
+          </tr>
+          <tr>
+            <td class="text-muted">GST Tax ({{ sale.tax_rate }}%):</td>
+            <td class="text-end fw-bold">₹{{ "{:,.2f}".format(sale.tax_amount) }}</td>
+          </tr>
+          {% if sale.discount_amount > 0 %}
+          <tr>
+            <td class="text-danger">Store Discount:</td>
+            <td class="text-end text-danger fw-bold">- ₹{{ "{:,.2f}".format(sale.discount_amount) }}</td>
+          </tr>
+          {% endif %}
+          <tr class="border-top">
+            <td class="fs-6 fw-bold text-dark pt-2">NET AMOUNT PAYABLE:</td>
+            <td class="fs-6 fw-bold text-primary text-end pt-2">₹{{ "{:,.2f}".format(sale.total_amount) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Barcode Simulation & Footer -->
+  <div class="text-center pt-3 border-top">
+    <!-- Clean CSS Barcode Representation -->
+    <div class="d-inline-block p-2 bg-light rounded mb-2">
+      <div style="font-family: monospace; letter-spacing: 5px; font-weight: bold; font-size: 1.1rem;">
+        *||| | |||| | ||| |||| |*
+      </div>
+      <div class="font-monospace text-muted small" style="letter-spacing: 2px;">{{ sale.invoice_no }}</div>
+    </div>
+    <div class="small fw-semibold text-dark">Thank you for shopping at {{ store_name }}!</div>
+    <div class="text-muted" style="font-size: 0.72rem;">
+      Goods once sold can be exchanged within 7 days in original packaging along with this invoice.
+    </div>
+  </div>
+</div>
+{% endblock %}

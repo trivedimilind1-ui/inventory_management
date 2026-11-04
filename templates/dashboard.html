@@ -1,0 +1,317 @@
+{% extends 'base.html' %}
+{% block title %}Supermarket Dashboard - SmartStock{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+  <div>
+    <h1 class="page-title">
+      <i class="bi bi-speedometer2 text-primary"></i> Supermarket Dashboard
+    </h1>
+    <div class="page-subtitle">Real-time inventory valuation, billing telemetry, and stock health monitoring</div>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('sales.index') }}" class="btn btn-primary shadow-sm">
+      <i class="bi bi-cart-plus"></i> POS Billing
+    </a>
+    {% if current_user.is_admin %}
+    <a href="{{ url_for('products.index') }}" class="btn btn-light shadow-sm">
+      <i class="bi bi-plus-circle"></i> Add Product
+    </a>
+    {% endif %}
+  </div>
+</div>
+
+<!-- 8 Stat Cards (KPIs) -->
+<div class="row g-3 mb-4">
+  <!-- 1. Total Products -->
+  <div class="col-xl-3 col-md-6">
+    <div class="kpi-card kpi-primary">
+      <div>
+        <div class="kpi-label">Total Catalog Products</div>
+        <div class="kpi-value">{{ kpi.total_products }}</div>
+        <div class="kpi-sub text-muted">Across {{ kpi.total_categories }} categories</div>
+      </div>
+      <div class="kpi-icon kpi-icon-indigo">
+        <i class="bi bi-box-seam"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Total Categories -->
+  <div class="col-xl-3 col-md-6">
+    <div class="kpi-card kpi-purple">
+      <div>
+        <div class="kpi-label">Active Categories</div>
+        <div class="kpi-value">{{ kpi.total_categories }}</div>
+        <div class="kpi-sub text-muted">Supermarket aisles & depts</div>
+      </div>
+      <div class="kpi-icon kpi-icon-purple">
+        <i class="bi bi-tags"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Total Stock Quantity -->
+  <div class="col-xl-3 col-md-6">
+    <div class="kpi-card kpi-success">
+      <div>
+        <div class="kpi-label">Total Units in Stock</div>
+        <div class="kpi-value">{{ "{:,}".format(kpi.total_stock_quantity) }}</div>
+        <div class="kpi-sub text-success"><i class="bi bi-check-circle"></i> Live physical count</div>
+      </div>
+      <div class="kpi-icon kpi-icon-green">
+        <i class="bi bi-boxes"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Inventory Valuation -->
+  <div class="col-xl-3 col-md-6">
+    <div class="kpi-card kpi-primary">
+      <div>
+        <div class="kpi-label">Total Inventory Value</div>
+        <div class="kpi-value">₹{{ "{:,.2f}".format(kpi.total_inventory_value) }}</div>
+        <div class="kpi-sub text-muted">Cost of inventory held</div>
+      </div>
+      <div class="kpi-icon kpi-icon-indigo">
+        <i class="bi bi-currency-rupee"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Low Stock Products -->
+  <div class="col-xl-3 col-md-6">
+    <div class="kpi-card kpi-warning">
+      <div>
+        <div class="kpi-label">Low Stock Alerts</div>
+        <div class="kpi-value text-warning">{{ kpi.low_stock_count }}</div>
+        <div class="kpi-sub text-warning"><i class="bi bi-exclamation-triangle"></i> At or below min level</div>
+      </div>
+      <div class="kpi-icon kpi-icon-orange">
+        <i class="bi bi-bell-fill"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. Out of Stock -->
+  <div class="col-xl-3 col-md-6">
+    <div class="kpi-card kpi-danger">
+      <div>
+        <div class="kpi-label">Out of Stock</div>
+        <div class="kpi-value text-danger">{{ kpi.out_of_stock_count }}</div>
+        <div class="kpi-sub text-danger"><i class="bi bi-x-circle"></i> Requires immediate reorder</div>
+      </div>
+      <div class="kpi-icon kpi-icon-red">
+        <i class="bi bi-slash-circle-fill"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. Total Sales -->
+  <div class="col-xl-3 col-md-6">
+    <div class="kpi-card kpi-success">
+      <div>
+        <div class="kpi-label">Completed Sales</div>
+        <div class="kpi-value">{{ kpi.total_sales_count }}</div>
+        <div class="kpi-sub text-muted">All-time invoices generated</div>
+      </div>
+      <div class="kpi-icon kpi-icon-green">
+        <i class="bi bi-receipt"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8. Today's Revenue -->
+  <div class="col-xl-3 col-md-6">
+    <div class="kpi-card kpi-purple">
+      <div>
+        <div class="kpi-label">Today's Revenue</div>
+        <div class="kpi-value" style="color: var(--secondary);">₹{{ "{:,.2f}".format(kpi.today_revenue) }}</div>
+        <div class="kpi-sub text-muted">Total All-time: ₹{{ "{:,.0f}".format(kpi.total_revenue) }}</div>
+      </div>
+      <div class="kpi-icon kpi-icon-purple">
+        <i class="bi bi-cash-stack"></i>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Interactive Charts Row 1 -->
+<div class="row g-4 mb-4">
+  <!-- Chart 1: 7-Day Sales Trend -->
+  <div class="col-lg-8">
+    <div class="card h-100">
+      <div class="card-header-clean">
+        <h5><i class="bi bi-graph-up text-primary me-2"></i>Sales & Revenue Trend (Last 7 Days)</h5>
+        <span class="badge bg-light text-secondary border">Real-time DB Data</span>
+      </div>
+      <div class="card-body-clean" style="height: 320px;">
+        <canvas id="chartSevenDays"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart 2: Category Distribution -->
+  <div class="col-lg-4">
+    <div class="card h-100">
+      <div class="card-header-clean">
+        <h5><i class="bi bi-pie-chart text-secondary me-2"></i>Products by Category</h5>
+      </div>
+      <div class="card-body-clean" style="height: 320px;">
+        <canvas id="chartCategories"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Interactive Charts Row 2 -->
+<div class="row g-4 mb-4">
+  <!-- Chart 3: Top 5 Selling Products -->
+  <div class="col-lg-4">
+    <div class="card h-100">
+      <div class="card-header-clean">
+        <h5><i class="bi bi-trophy text-warning me-2"></i>Top 5 Selling Items</h5>
+      </div>
+      <div class="card-body-clean" style="height: 280px;">
+        <canvas id="chartTopProducts"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart 4: Stock Availability -->
+  <div class="col-lg-4">
+    <div class="card h-100">
+      <div class="card-header-clean">
+        <h5><i class="bi bi-shield-check text-success me-2"></i>Stock Health Status</h5>
+      </div>
+      <div class="card-body-clean" style="height: 280px;">
+        <canvas id="chartStockStatus"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart 5: Monthly Revenue -->
+  <div class="col-lg-4">
+    <div class="card h-100">
+      <div class="card-header-clean">
+        <h5><i class="bi bi-bar-chart text-primary me-2"></i>Monthly Revenue ({{ now_year if now_year else 2026 }})</h5>
+      </div>
+      <div class="card-body-clean" style="height: 280px;">
+        <canvas id="chartMonthlyRevenue"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Activity & Notifications Section -->
+<div class="row g-4">
+  <!-- Recent Sales -->
+  <div class="col-lg-7">
+    <div class="card h-100">
+      <div class="card-header-clean">
+        <h5><i class="bi bi-receipt-cutoff text-primary me-2"></i>Recent Sales Transactions</h5>
+        <a href="{{ url_for('sales.history') }}" class="small fw-semibold">View All <i class="bi bi-arrow-right"></i></a>
+      </div>
+      <div class="table-responsive">
+        <table class="table-custom mb-0">
+          <thead>
+            <tr>
+              <th>Invoice</th>
+              <th>Customer</th>
+              <th>Method</th>
+              <th>Total</th>
+              <th>Time</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for sale in recent_sales %}
+            <tr>
+              <td>
+                <span class="fw-bold text-dark">{{ sale.invoice_no }}</span>
+              </td>
+              <td>{{ sale.customer_name }}</td>
+              <td>
+                <span class="badge bg-light text-dark border text-uppercase">{{ sale.payment_method }}</span>
+              </td>
+              <td>
+                <span class="fw-bold text-primary">₹{{ "{:,.2f}".format(sale.total_amount) }}</span>
+              </td>
+              <td class="text-muted small">
+                {{ sale.created_at.strftime('%d %b, %H:%M') }}
+              </td>
+              <td>
+                <a href="{{ url_for('sales.invoice', sale_id=sale.id) }}" class="btn btn-sm btn-outline-primary py-0 px-2" title="Print Invoice">
+                  <i class="bi bi-printer"></i>
+                </a>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="6" class="text-center py-4 text-muted">No sales recorded yet.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Low Stock Warnings & Recent Movements -->
+  <div class="col-lg-5">
+    <div class="card h-100">
+      <div class="card-header-clean">
+        <h5><i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>Low Stock Warnings</h5>
+        <a href="{{ url_for('inventory.index', status='low_stock') }}" class="small fw-semibold text-warning">Restock All <i class="bi bi-arrow-right"></i></a>
+      </div>
+      <div class="card-body-clean p-0">
+        <div class="list-group list-group-flush">
+          {% for item in low_stock_list %}
+          <div class="list-group-item d-flex justify-content-between align-items-center p-3">
+            <div>
+              <div class="fw-bold text-dark">{{ item.name }}</div>
+              <div class="text-muted small">SKU: {{ item.sku }} • Min Required: {{ item.min_stock_level }} {{ item.unit }}</div>
+            </div>
+            <div class="text-end">
+              <span class="badge badge-custom badge-low-stock mb-1 d-block">
+                {{ item.quantity }} {{ item.unit }} Left
+              </span>
+              <a href="{{ url_for('inventory.index') }}" class="btn btn-sm btn-light py-0 px-2" style="font-size: 0.75rem;">
+                + Restock
+              </a>
+            </div>
+          </div>
+          {% endfor %}
+
+          {% for item in out_of_stock_list %}
+          <div class="list-group-item d-flex justify-content-between align-items-center p-3 bg-danger-subtle">
+            <div>
+              <div class="fw-bold text-danger">{{ item.name }}</div>
+              <div class="text-muted small">SKU: {{ item.sku }} • Out of Stock!</div>
+            </div>
+            <div class="text-end">
+              <span class="badge badge-custom badge-out-of-stock mb-1 d-block">0 In Stock</span>
+              <a href="{{ url_for('inventory.index') }}" class="btn btn-sm btn-danger py-0 px-2" style="font-size: 0.75rem;">
+                + Add Stock
+              </a>
+            </div>
+          </div>
+          {% endfor %}
+
+          {% if not low_stock_list and not out_of_stock_list %}
+          <div class="p-4 text-center text-muted">
+            <i class="bi bi-check-circle-fill text-success fs-3 d-block mb-2"></i>
+            All inventory levels are well stocked!
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

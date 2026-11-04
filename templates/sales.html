@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+{% block title %}POS Billing Terminal - SmartStock{% endblock %}
+
+{% block content %}
+<div class="page-header mb-3">
+  <div>
+    <h1 class="page-title">
+      <i class="bi bi-calculator text-primary"></i> Supermarket POS Billing Terminal
+    </h1>
+    <div class="page-subtitle">Fast barcode scanning, dynamic cart calculations, multi-payment support, and instant receipt generation</div>
+  </div>
+  <div>
+    <a href="{{ url_for('sales.history') }}" class="btn btn-outline-secondary">
+      <i class="bi bi-clock-history me-1"></i> Sales History
+    </a>
+  </div>
+</div>
+
+<div class="pos-container" id="posContainer">
+  <!-- LEFT: PRODUCT CATALOG & BARCODE SCANNER -->
+  <div class="d-flex flex-column gap-3">
+    <!-- Barcode & Search Controls -->
+    <div class="card p-3 shadow-sm">
+      <div class="row g-2">
+        <div class="col-md-6">
+          <label class="form-label fw-semibold small text-muted"><i class="bi bi-upc-scan text-primary me-1"></i> Barcode Scanner (Focus & Scan / Press Enter)</label>
+          <div class="input-group">
+            <span class="input-group-text bg-light"><i class="bi bi-barcode"></i></span>
+            <input type="text" id="barcodeScanInput" class="form-control font-monospace" placeholder="Scan SKU / Barcode..." autofocus>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-semibold small text-muted"><i class="bi bi-search me-1"></i> Search Catalog Name / Brand</label>
+          <input type="text" id="posSearchInput" class="form-control" placeholder="Type product name (e.g. Milk, Maggi)...">
+        </div>
+      </div>
+
+      <!-- Quick Category Filter Pills -->
+      <div class="d-flex gap-2 overflow-auto pt-3 mt-2 border-top">
+        <button class="btn btn-sm btn-light border pos-cat-pill active" data-cat-id="all">All Products</button>
+        {% for cat in products|map(attribute='category')|unique(attribute='id') %}
+          <button class="btn btn-sm btn-light border pos-cat-pill" data-cat-id="{{ cat.id }}">{{ cat.name }}</button>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Products Grid -->
+    <div class="row g-3" style="max-height: calc(100vh - 280px); overflow-y: auto; padding-right: 4px;">
+      {% for p in products %}
+      <div class="col-xl-4 col-md-6">
+        <div class="pos-product-card pos-product-item h-100" 
+             data-id="{{ p.id }}" 
+             data-name="{{ p.name|escape }}" 
+             data-sku="{{ p.sku }}" 
+             data-barcode="{{ p.barcode or p.sku }}"
+             data-price="{{ p.selling_price }}" 
+             data-stock="{{ p.quantity }}"
+             data-unit="{{ p.unit }}"
+             data-category-id="{{ p.category_id }}">
+          <div>
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <span class="badge bg-light text-secondary border small">{{ p.brand }}</span>
+              <span class="badge {% if p.quantity <= p.min_stock_level %}badge-low-stock{% else %}badge-in-stock{% endif %}">
+                {{ p.quantity }} {{ p.unit }} left
+              </span>
+            </div>
+            <h6 class="fw-bold text-dark mb-1 text-truncate" title="{{ p.name }}">{{ p.name }}</h6>
+            <div class="font-monospace text-muted small mb-2">SKU: {{ p.sku }}</div>
+          </div>
+          <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+            <span class="fw-bold fs-5 text-primary">₹{{ "{:,.2f}".format(p.selling_price) }}</span>
+            <button class="btn btn-sm btn-primary rounded-circle" style="width: 32px; height: 32px; padding: 0;" title="Add to Cart">
+              <i class="bi bi-plus-lg"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <div class="col-12 text-center py-5 text-muted">
+        <i class="bi bi-cart-x fs-1 text-slate-300 d-block mb-2"></i>
+        No active products with available stock found.
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- RIGHT: BILLING CART PANEL -->
+  <div class="pos-cart-panel">
+    <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+      <div>
+        <h5 class="fw-bold mb-0"><i class="bi bi-bag-check text-primary me-2"></i>Current Cart</h5>
+        <div class="text-muted small">Items in checkout session</div>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge bg-primary rounded-pill px-2 py-1" id="cartBadgeCount">0</span>
+        <button class="btn btn-sm btn-light text-danger" id="clearCartBtn" title="Clear Cart">
+          <i class="bi bi-trash"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Cart Items List -->
+    <div class="pos-cart-items" id="cartItemsContainer">
+      <!-- Injected via JavaScript -->
+    </div>
+
+    <div id="cartEmptyState" class="p-5 text-center text-muted">
+      <i class="bi bi-cart3 fs-1 text-slate-300 d-block mb-2"></i>
+      Cart is currently empty.<br>
+      <span class="small">Click products on the left or scan barcodes to begin billing.</span>
+    </div>
+
+    <!-- Cart Summary & Checkout Details -->
+    <div class="pos-cart-summary" id="cartSummaryBlock" style="display: none;">
+      <!-- Customer Information -->
+      <div class="row g-2 mb-3">
+        <div class="col-6">
+          <label class="form-label small fw-semibold text-muted mb-1">Customer Name</label>
+          <input type="text" id="customerNameInput" class="form-control form-control-sm" value="Walk-in Customer">
+        </div>
+        <div class="col-6">
+          <label class="form-label small fw-semibold text-muted mb-1">Mobile / Phone</label>
+          <input type="tel" id="customerPhoneInput" class="form-control form-control-sm" placeholder="+91 98...">
+        </div>
+      </div>
+
+      <!-- Payment Method Selection -->
+      <div class="mb-3">
+        <label class="form-label small fw-semibold text-muted mb-1">Payment Method</label>
+        <div class="btn-group w-100" role="group">
+          <input type="radio" class="btn-check" name="payment_method" id="payCash" value="cash" checked>
+          <label class="btn btn-sm btn-outline-primary" for="payCash"><i class="bi bi-cash me-1"></i> Cash</label>
+
+          <input type="radio" class="btn-check" name="payment_method" id="payCard" value="card">
+          <label class="btn btn-sm btn-outline-primary" for="payCard"><i class="bi bi-credit-card me-1"></i> Card</label>
+
+          <input type="radio" class="btn-check" name="payment_method" id="payUPI" value="upi">
+          <label class="btn btn-sm btn-outline-primary" for="payUPI"><i class="bi bi-qr-code-scan me-1"></i> UPI</label>
+        </div>
+      </div>
+
+      <!-- Pricing Summary -->
+      <div class="d-flex justify-content-between small text-muted mb-1">
+        <span>Items Subtotal:</span>
+        <span class="fw-bold text-dark" id="posSubtotalText">₹0.00</span>
+      </div>
+
+      <div class="d-flex justify-content-between align-items-center small text-muted mb-1">
+        <span>Store GST / Tax (%):</span>
+        <div class="d-flex align-items-center gap-1" style="width: 110px;">
+          <input type="number" step="0.5" min="0" id="taxRateInput" class="form-control form-control-sm text-end p-1" value="{{ default_tax }}">
+          <span class="fw-bold text-dark" id="posTaxText">₹0.00</span>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-between align-items-center small text-muted mb-2">
+        <span>Flat Discount (₹):</span>
+        <div class="d-flex align-items-center gap-1" style="width: 110px;">
+          <input type="number" step="1" min="0" id="posDiscountInput" class="form-control form-control-sm text-end p-1" value="0">
+          <span class="text-danger fw-bold" id="posDiscountText">- ₹0.00</span>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-between fs-5 fw-bold text-dark pt-2 border-top mb-3">
+        <span>Grand Total:</span>
+        <span class="text-primary" id="posGrandTotalText">₹0.00</span>
+      </div>
+
+      <button type="button" class="btn btn-primary w-100 py-2 fw-bold shadow" id="checkoutSubmitBtn" disabled>
+        <i class="bi bi-check-circle me-1"></i> Pay & Print Invoice (<span id="checkoutTotalBtnText">₹0.00</span>)
+      </button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/pos.js') }}"></script>
+{% endblock %}

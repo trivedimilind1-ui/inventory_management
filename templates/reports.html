@@ -1,0 +1,278 @@
+{% extends 'base.html' %}
+{% block title %}Reports & Financial Analytics - SmartStock{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">
+      <i class="bi bi-bar-chart-fill text-primary"></i> Reports & Financial Analytics
+    </h1>
+    <div class="page-subtitle">Revenue metrics, COGS gross profit calculations, stock turnover, and CSV exports</div>
+  </div>
+  <!-- CSV Export Dropdown -->
+  <div class="dropdown">
+    <button class="btn btn-primary dropdown-toggle shadow-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+      <i class="bi bi-download me-1"></i> Export Reports (CSV)
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+      <li>
+        <a class="dropdown-item py-2" href="{{ url_for('reports.export_sales_csv') }}">
+          <i class="bi bi-file-earmark-spreadsheet me-2 text-primary"></i> Sales Transactions CSV
+        </a>
+      </li>
+      <li>
+        <a class="dropdown-item py-2" href="{{ url_for('reports.export_inventory_csv') }}">
+          <i class="bi bi-boxes me-2 text-success"></i> Inventory Valuation CSV
+        </a>
+      </li>
+      <li>
+        <a class="dropdown-item py-2" href="{{ url_for('reports.export_movements_csv') }}">
+          <i class="bi bi-arrow-left-right me-2 text-warning"></i> Stock Movement Audit CSV
+        </a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<!-- Date Range Filter Toolbar -->
+<div class="card mb-4 shadow-sm">
+  <div class="card-body p-3">
+    <form method="GET" action="{{ url_for('reports.index') }}" class="row g-2 align-items-center">
+      <div class="col-md-4 d-flex gap-1">
+        <a href="{{ url_for('reports.index', period='today') }}" class="btn btn-sm {% if summary.period == 'today' %}btn-primary{% else %}btn-light{% endif %} flex-fill">Today</a>
+        <a href="{{ url_for('reports.index', period='week') }}" class="btn btn-sm {% if summary.period == 'week' %}btn-primary{% else %}btn-light{% endif %} flex-fill">Last 7 Days</a>
+        <a href="{{ url_for('reports.index', period='month') }}" class="btn btn-sm {% if summary.period == 'month' %}btn-primary{% else %}btn-light{% endif %} flex-fill">Last 30 Days</a>
+        <a href="{{ url_for('reports.index', period='year') }}" class="btn btn-sm {% if summary.period == 'year' %}btn-primary{% else %}btn-light{% endif %} flex-fill">This Year</a>
+      </div>
+
+      <div class="col-md-3">
+        <div class="input-group input-group-sm">
+          <span class="input-group-text bg-light">From</span>
+          <input type="date" name="start_date" class="form-control" value="{{ summary.start_date }}">
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="input-group input-group-sm">
+          <span class="input-group-text bg-light">To</span>
+          <input type="date" name="end_date" class="form-control" value="{{ summary.end_date }}">
+        </div>
+      </div>
+      <div class="col-md-2">
+        <input type="hidden" name="period" value="custom">
+        <button type="submit" class="btn btn-sm btn-primary w-100">Apply Custom</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Financial Summary KPI Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-xl-3 col-md-6">
+    <div class="kpi-card kpi-primary">
+      <div>
+        <div class="kpi-label">Gross Revenue</div>
+        <div class="kpi-value text-primary">₹{{ "{:,.2f}".format(summary.total_revenue) }}</div>
+        <div class="kpi-sub text-muted">{{ summary.total_orders }} orders across selected range</div>
+      </div>
+      <div class="kpi-icon kpi-icon-indigo"><i class="bi bi-cash-stack"></i></div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-md-6">
+    <div class="kpi-card kpi-success">
+      <div>
+        <div class="kpi-label">Gross Profit (COGS)</div>
+        <div class="kpi-value text-success">₹{{ "{:,.2f}".format(summary.gross_profit) }}</div>
+        <div class="kpi-sub text-success"><i class="bi bi-graph-up-arrow"></i> Margin: {{ summary.profit_margin }}%</div>
+      </div>
+      <div class="kpi-icon kpi-icon-green"><i class="bi bi-piggy-bank"></i></div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-md-6">
+    <div class="kpi-card kpi-purple">
+      <div>
+        <div class="kpi-label">Avg Order Value (AOV)</div>
+        <div class="kpi-value" style="color: var(--secondary);">₹{{ "{:,.2f}".format(summary.avg_order_value) }}</div>
+        <div class="kpi-sub text-muted">{{ summary.units_sold }} total units sold</div>
+      </div>
+      <div class="kpi-icon kpi-icon-purple"><i class="bi bi-cart-check"></i></div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-md-6">
+    <div class="kpi-card kpi-primary">
+      <div>
+        <div class="kpi-label">Inventory Held (Cost)</div>
+        <div class="kpi-value">₹{{ "{:,.2f}".format(summary.inventory_cost) }}</div>
+        <div class="kpi-sub text-muted">Retail value: ₹{{ "{:,.0f}".format(summary.inventory_retail) }}</div>
+      </div>
+      <div class="kpi-icon kpi-icon-indigo"><i class="bi bi-box-seam"></i></div>
+    </div>
+  </div>
+</div>
+
+<!-- Interactive Chart Visualizations -->
+<div class="row g-4 mb-4">
+  <!-- Chart 1: Revenue & Profit Trend -->
+  <div class="col-lg-8">
+    <div class="card h-100 shadow-sm">
+      <div class="card-header-clean">
+        <h5><i class="bi bi-graph-up text-primary me-2"></i>Revenue vs Gross Profit Daily Trajectory</h5>
+      </div>
+      <div class="card-body-clean" style="height: 330px;">
+        <canvas id="reportTrendChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart 2: Category Breakdown -->
+  <div class="col-lg-4">
+    <div class="card h-100 shadow-sm">
+      <div class="card-header-clean">
+        <h5><i class="bi bi-pie-chart text-secondary me-2"></i>Sales by Category (₹)</h5>
+      </div>
+      <div class="card-body-clean" style="height: 330px;">
+        <canvas id="reportCategoryChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tables: Best Sellers & Slow Moving -->
+<div class="row g-4 mb-4">
+  <!-- Best Sellers -->
+  <div class="col-lg-6">
+    <div class="card h-100 shadow-sm">
+      <div class="card-header-clean">
+        <h5><i class="bi bi-trophy text-warning me-2"></i>Top 5 Best-Selling Products</h5>
+      </div>
+      <div class="table-responsive">
+        <table class="table-custom">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Units Sold</th>
+              <th>Revenue (₹)</th>
+              <th>Gross Profit (₹)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in best_sellers %}
+            <tr>
+              <td>
+                <div class="fw-bold text-dark">{{ item.product_name }}</div>
+                <div class="font-monospace small text-muted">{{ item.sku }}</div>
+              </td>
+              <td class="fw-bold text-center">{{ item.qty_sold }}</td>
+              <td class="fw-semibold text-primary">₹{{ "{:,.2f}".format(item.revenue) }}</td>
+              <td class="fw-bold text-success">₹{{ "{:,.2f}".format(item.profit) }}</td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="4" class="text-center py-4 text-muted">No sales recorded in this period.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Least Selling / Slow Movers -->
+  <div class="col-lg-6">
+    <div class="card h-100 shadow-sm">
+      <div class="card-header-clean">
+        <h5><i class="bi bi-hourglass-split text-secondary me-2"></i>Slow-Moving / Unsold Inventory</h5>
+      </div>
+      <div class="table-responsive">
+        <table class="table-custom">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Holding Qty</th>
+              <th>Selling Price</th>
+              <th>Units Sold</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in least_sellers %}
+            <tr>
+              <td>
+                <div class="fw-bold text-dark">{{ item.name }}</div>
+                <div class="font-monospace small text-muted">{{ item.sku }}</div>
+              </td>
+              <td><span class="badge bg-light text-dark border">{{ item.quantity }} in stock</span></td>
+              <td>₹{{ "{:,.2f}".format(item.selling_price) }}</td>
+              <td class="text-muted">{{ item.qty_sold }}</td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="4" class="text-center py-4 text-muted">No data available.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Low Stock & Reorder Requirements Table -->
+<div class="card shadow-sm">
+  <div class="card-header-clean">
+    <h5><i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>Inventory Reorder Priority Report ({{ low_stock_items|length }} Items)</h5>
+    <a href="{{ url_for('inventory.index', status='low_stock') }}" class="btn btn-sm btn-outline-warning text-dark">
+      <i class="bi bi-boxes me-1"></i> Open Restock Manager
+    </a>
+  </div>
+  <div class="table-responsive">
+    <table class="table-custom">
+      <thead>
+        <tr>
+          <th>Product Name & Brand</th>
+          <th>SKU</th>
+          <th>Supplier Company</th>
+          <th>Current Stock</th>
+          <th>Min Level</th>
+          <th>Deficit Qty</th>
+          <th>Est. Reorder Cost</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in low_stock_items %}
+        {% set deficit = [p.min_stock_level - p.quantity, 0]|max + 10 %}
+        {% set reorder_cost = deficit * p.purchase_price %}
+        <tr>
+          <td>
+            <div class="fw-bold text-dark">{{ p.name }}</div>
+            <div class="text-muted small">{{ p.brand }} &bull; {{ p.category.name }}</div>
+          </td>
+          <td><span class="badge bg-light text-dark border font-monospace">{{ p.sku }}</span></td>
+          <td>{{ p.supplier.company_name if p.supplier else 'Direct Procurement' }}</td>
+          <td>
+            <span class="fw-bold {% if p.quantity <= 0 %}text-danger{% else %}text-warning{% endif %}">
+              {{ p.quantity }} {{ p.unit }}
+            </span>
+          </td>
+          <td>{{ p.min_stock_level }} {{ p.unit }}</td>
+          <td><span class="badge bg-warning-subtle text-warning fw-bold">+{{ deficit }} {{ p.unit }}</span></td>
+          <td class="fw-bold text-dark">₹{{ "{:,.2f}".format(reorder_cost) }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="text-center py-4 text-muted">
+            <i class="bi bi-check-circle-fill text-success fs-3 d-block mb-1"></i>
+            All inventory levels are above minimum thresholds!
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/reports.js') }}"></script>
+{% endblock %}

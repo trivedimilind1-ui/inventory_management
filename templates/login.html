@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% block title %}Sign In - SmartStock{% endblock %}
+
+{% block guest_content %}
+<div class="auth-card">
+  <div class="auth-brand">
+    <div class="brand-icon" style="width: 44px; height: 44px; font-size: 1.4rem;">
+      <i class="bi bi-cart3"></i>
+    </div>
+    <div>
+      <h3 class="mb-0 fw-bold">Smart<span style="color: var(--primary);">Stock</span></h3>
+      <div class="text-muted small">Supermarket Inventory System</div>
+    </div>
+  </div>
+
+  <div class="text-center mb-4">
+    <h5 class="fw-bold mb-1">Welcome back</h5>
+    <p class="text-muted small">Enter your credentials to access the store management system</p>
+  </div>
+
+  <!-- Quick Demo Access Pills -->
+  <div class="p-3 mb-4 rounded-3" style="background: var(--slate-50); border: 1px dashed var(--slate-200);">
+    <div class="d-flex align-items-center justify-content-between mb-2">
+      <span class="small fw-bold text-slate-700"><i class="bi bi-key-fill text-primary me-1"></i> Quick Demo Accounts</span>
+      <span class="badge bg-light text-secondary border">Click to auto-fill</span>
+    </div>
+    <div class="d-flex gap-2">
+      <button type="button" class="btn btn-sm btn-outline-primary flex-fill" onclick="fillCredentials('admin', 'admin123')">
+        <i class="bi bi-shield-lock me-1"></i> Admin
+      </button>
+      <button type="button" class="btn btn-sm btn-outline-secondary flex-fill" onclick="fillCredentials('staff', 'staff123')">
+        <i class="bi bi-person-badge me-1"></i> Staff / Cashier
+      </button>
+    </div>
+  </div>
+
+  <form method="POST" action="{{ url_for('auth.login') }}">
+    <div class="mb-3">
+      <label class="form-label fw-semibold small text-muted">Username or Email</label>
+      <div class="input-group">
+        <span class="input-group-text bg-light border-end-0"><i class="bi bi-person text-muted"></i></span>
+        <input type="text" name="username" id="usernameInput" class="form-control border-start-0" placeholder="admin or staff@smartstock.in" value="{{ identifier or '' }}" required autofocus>
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <div class="d-flex justify-content-between">
+        <label class="form-label fw-semibold small text-muted">Password</label>
+      </div>
+      <div class="input-group">
+        <span class="input-group-text bg-light border-end-0"><i class="bi bi-lock text-muted"></i></span>
+        <input type="password" name="password" id="passwordInput" class="form-control border-start-0 border-end-0" placeholder="••••••••" required>
+        <button class="btn btn-light border border-start-0 text-muted" type="button" onclick="togglePassword()">
+          <i class="bi bi-eye" id="toggleIcon"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="mb-4 d-flex justify-content-between align-items-center">
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="remember" id="rememberMe">
+        <label class="form-check-label small text-muted" for="rememberMe">Keep me logged in</label>
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100 py-2 fw-bold shadow-sm">
+      <i class="bi bi-box-arrow-in-right me-1"></i> Sign In to SmartStock
+    </button>
+  </form>
+
+  <div class="text-center mt-4 pt-3 border-top">
+    <span class="small text-muted">New staff member?</span>
+    <a href="{{ url_for('auth.register') }}" class="small fw-bold ms-1 text-primary">Register New Account</a>
+  </div>
+</div>
+
+<script>
+function fillCredentials(user, pass) {
+  document.getElementById('usernameInput').value = user;
+  document.getElementById('passwordInput').value = pass;
+}
+
+function togglePassword() {
+  const input = document.getElementById('passwordInput');
+  const icon = document.getElementById('toggleIcon');
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.classList.remove('bi-eye');
+    icon.classList.add('bi-eye-slash');
+  } else {
+    input.type = 'password';
+    icon.classList.remove('bi-eye-slash');
+    icon.classList.add('bi-eye');
+  }
+}
+</script>
+{% endblock %}

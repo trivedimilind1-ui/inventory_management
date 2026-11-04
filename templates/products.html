@@ -1,0 +1,507 @@
+{% extends 'base.html' %}
+{% block title %}Product Catalog - SmartStock{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">
+      <i class="bi bi-box-seam-fill text-primary"></i> Product Management
+    </h1>
+    <div class="page-subtitle">Manage supermarket inventory catalog, SKUs, pricing, and stock thresholds</div>
+  </div>
+  {% if current_user.is_admin %}
+  <div>
+    <button class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#addProductModal">
+      <i class="bi bi-plus-lg"></i> Add New Product
+    </button>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Filter & Search Toolbar -->
+<div class="card mb-4">
+  <div class="card-body p-3">
+    <form method="GET" action="{{ url_for('products.index') }}" class="row g-2 align-items-center">
+      <div class="col-md-3">
+        <div class="input-group">
+          <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+          <input type="text" name="search" class="form-control border-start-0" placeholder="Search name, SKU, brand..." value="{{ search }}">
+        </div>
+      </div>
+
+      <div class="col-md-2">
+        <select name="category" class="form-select">
+          <option value="">All Categories</option>
+          {% for cat in categories %}
+            <option value="{{ cat.id }}" {% if selected_category == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-2">
+        <select name="supplier" class="form-select">
+          <option value="">All Suppliers</option>
+          {% for sup in suppliers %}
+            <option value="{{ sup.id }}" {% if selected_supplier == sup.id %}selected{% endif %}>{{ sup.company_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-2">
+        <select name="status" class="form-select">
+          <option value="">All Stock Levels</option>
+          <option value="low_stock" {% if selected_status == 'low_stock' %}selected{% endif %}>Low Stock Only</option>
+          <option value="out_of_stock" {% if selected_status == 'out_of_stock' %}selected{% endif %}>Out of Stock</option>
+        </select>
+      </div>
+
+      <div class="col-md-2">
+        <select name="sort" class="form-select">
+          <option value="created_at_desc" {% if sort_by == 'created_at_desc' %}selected{% endif %}>Newest First</option>
+          <option value="name_asc" {% if sort_by == 'name_asc' %}selected{% endif %}>Name (A-Z)</option>
+          <option value="price_asc" {% if sort_by == 'price_asc' %}selected{% endif %}>Price: Low to High</option>
+          <option value="price_desc" {% if sort_by == 'price_desc' %}selected{% endif %}>Price: High to Low</option>
+          <option value="qty_asc" {% if sort_by == 'qty_asc' %}selected{% endif %}>Stock: Low to High</option>
+          <option value="qty_desc" {% if sort_by == 'qty_desc' %}selected{% endif %}>Stock: High to Low</option>
+        </select>
+      </div>
+
+      <div class="col-md-1 d-flex gap-1">
+        <button type="submit" class="btn btn-primary w-100" title="Apply Filters">
+          <i class="bi bi-funnel-fill"></i>
+        </button>
+        {% if search or selected_category or selected_supplier or selected_status or sort_by != 'created_at_desc' %}
+        <a href="{{ url_for('products.index') }}" class="btn btn-light" title="Reset Filters">
+          <i class="bi bi-arrow-counterclockwise"></i>
+        </a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Products Table Card -->
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table-custom">
+      <thead>
+        <tr>
+          <th>Product & Brand</th>
+          <th>SKU / Barcode</th>
+          <th>Category</th>
+          <th>Cost / Price</th>
+          <th>Margin</th>
+          <th>Stock Level</th>
+          <th>Expiry Date</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in products %}
+        <tr>
+          <td>
+            <div class="fw-bold text-dark">{{ p.name }}</div>
+            <div class="text-muted small">Brand: <span class="fw-semibold">{{ p.brand }}</span></div>
+          </td>
+          <td>
+            <span class="badge bg-light text-dark border font-monospace">{{ p.sku }}</span>
+            {% if p.barcode and p.barcode != p.sku %}
+            <div class="text-muted" style="font-size: 0.75rem;">{{ p.barcode }}</div>
+            {% endif %}
+          </td>
+          <td>
+            <span class="badge bg-light text-secondary border">
+              <i class="bi {{ p.category.icon or 'bi-tag' }} me-1"></i>{{ p.category.name }}
+            </span>
+          </td>
+          <td>
+            <div class="fw-bold text-dark">₹{{ "{:,.2f}".format(p.selling_price) }}</div>
+            <div class="text-muted small">Cost: ₹{{ "{:,.2f}".format(p.purchase_price) }}</div>
+          </td>
+          <td>
+            <span class="badge {% if p.margin >= 20 %}bg-success-subtle text-success{% else %}bg-warning-subtle text-warning{% endif %}">
+              {{ p.margin }}%
+            </span>
+          </td>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <span class="fw-bold fs-6">{{ p.quantity }}</span> <span class="text-muted small">{{ p.unit }}</span>
+            </div>
+            {% if p.is_out_of_stock %}
+              <span class="badge badge-custom badge-out-of-stock">Out of Stock</span>
+            {% elif p.is_low_stock %}
+              <span class="badge badge-custom badge-low-stock">Low Stock (Min: {{ p.min_stock_level }})</span>
+            {% else %}
+              <span class="badge badge-custom badge-in-stock">In Stock</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if p.expiry_date %}
+              <span class="small text-muted">{{ p.expiry_date.strftime('%d %b %Y') }}</span>
+            {% else %}
+              <span class="small text-muted">N/A</span>
+            {% endif %}
+          </td>
+          <td class="text-end">
+            <div class="btn-group btn-group-sm">
+              <button class="btn btn-light" title="View Details" onclick="viewProductDetails({{ p.id }})">
+                <i class="bi bi-eye"></i>
+              </button>
+              {% if current_user.is_admin %}
+              <button class="btn btn-light" title="Edit Product" onclick="openEditModal({{ p.id }})">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button class="btn btn-light text-danger" title="Delete Product" onclick="confirmDeleteProduct({{ p.id }}, '{{ p.name|escape }}')">
+                <i class="bi bi-trash"></i>
+              </button>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="8" class="text-center py-5 text-muted">
+            <i class="bi bi-box-seam fs-1 text-slate-300 d-block mb-2"></i>
+            No products match the selected criteria.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  {% if pagination.pages > 1 %}
+  <div class="card-footer bg-white d-flex justify-content-between align-items-center py-3">
+    <div class="small text-muted">
+      Showing page {{ pagination.page }} of {{ pagination.pages }} ({{ pagination.total }} total products)
+    </div>
+    <nav>
+      <ul class="pagination pagination-sm mb-0">
+        <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+          <a class="page-link" href="{{ url_for('products.index', page=pagination.prev_num, search=search, category=selected_category, supplier=selected_supplier, status=selected_status, sort=sort_by) }}">Previous</a>
+        </li>
+        {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+          {% if p %}
+            <li class="page-item {% if p == pagination.page %}active{% endif %}">
+              <a class="page-link" href="{{ url_for('products.index', page=p, search=search, category=selected_category, supplier=selected_supplier, status=selected_status, sort=sort_by) }}">{{ p }}</a>
+            </li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">…</span></li>
+          {% endif %}
+        {% endfor %}
+        <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+          <a class="page-link" href="{{ url_for('products.index', page=pagination.next_num, search=search, category=selected_category, supplier=selected_supplier, status=selected_status, sort=sort_by) }}">Next</a>
+        </li>
+      </ul>
+    </nav>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block modals %}
+<!-- 1. Add Product Modal -->
+<div class="modal fade" id="addProductModal" tabindex="-1" aria-labelledby="addProductModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold" id="addProductModalLabel"><i class="bi bi-box-seam text-primary me-2"></i>Add New Supermarket Product</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" action="{{ url_for('products.add') }}">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-8">
+              <label class="form-label fw-semibold small">Product Name <span class="text-danger">*</span></label>
+              <input type="text" name="name" class="form-control" placeholder="e.g. Amul Butter 500g" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold small">Brand <span class="text-danger">*</span></label>
+              <input type="text" name="brand" class="form-control" placeholder="e.g. Amul" required>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">SKU (Stock Keeping Unit) <span class="text-danger">*</span></label>
+              <input type="text" name="sku" class="form-control font-monospace" placeholder="e.g. DAI-AMUL-002" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">Barcode Number</label>
+              <input type="text" name="barcode" class="form-control font-monospace" placeholder="e.g. 8901262010051">
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">Category <span class="text-danger">*</span></label>
+              <select name="category_id" class="form-select" required>
+                <option value="">Select Category</option>
+                {% for c in categories %}
+                  <option value="{{ c.id }}">{{ c.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">Supplier</label>
+              <select name="supplier_id" class="form-select">
+                <option value="">None / Direct Procurement</option>
+                {% for s in suppliers %}
+                  <option value="{{ s.id }}">{{ s.company_name }} ({{ s.name }})</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label fw-semibold small">Purchase Cost (₹) <span class="text-danger">*</span></label>
+              <input type="number" step="0.01" min="0" name="purchase_price" class="form-control" placeholder="0.00" required>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold small">Selling Price (₹) <span class="text-danger">*</span></label>
+              <input type="number" step="0.01" min="0" name="selling_price" class="form-control" placeholder="0.00" required>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold small">Initial Stock <span class="text-danger">*</span></label>
+              <input type="number" min="0" name="quantity" class="form-control" value="0" required>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold small">Min Stock Alert <span class="text-danger">*</span></label>
+              <input type="number" min="1" name="min_stock_level" class="form-control" value="10" required>
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label fw-semibold small">Unit of Measure</label>
+              <select name="unit" class="form-select">
+                <option value="pcs">Pieces (pcs)</option>
+                <option value="pack">Pack</option>
+                <option value="kg">Kilogram (kg)</option>
+                <option value="g">Gram (g)</option>
+                <option value="ltr">Litre (ltr)</option>
+                <option value="bottle">Bottle</option>
+                <option value="box">Box</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold small">Expiry Date</label>
+              <input type="date" name="expiry_date" class="form-control">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold small">Aisle / Shelf Info</label>
+              <input type="text" name="shelf" class="form-control" placeholder="Aisle 4, Bay B">
+            </div>
+
+            <div class="col-12">
+              <label class="form-label fw-semibold small">Product Description</label>
+              <textarea name="description" class="form-control" rows="2" placeholder="Brief description of product features, ingredients, or storage instructions..."></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary fw-bold">
+            <i class="bi bi-check-circle me-1"></i> Save Product
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- 2. Edit Product Modal -->
+<div class="modal fade" id="editProductModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square text-primary me-2"></i>Edit Product</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="editProductForm" method="POST" action="">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-8">
+              <label class="form-label fw-semibold small">Product Name <span class="text-danger">*</span></label>
+              <input type="text" name="name" id="editName" class="form-control" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold small">Brand <span class="text-danger">*</span></label>
+              <input type="text" name="brand" id="editBrand" class="form-control" required>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">SKU <span class="text-danger">*</span></label>
+              <input type="text" name="sku" id="editSku" class="form-control font-monospace" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">Barcode Number</label>
+              <input type="text" name="barcode" id="editBarcode" class="form-control font-monospace">
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">Category <span class="text-danger">*</span></label>
+              <select name="category_id" id="editCategory" class="form-select" required>
+                {% for c in categories %}
+                  <option value="{{ c.id }}">{{ c.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">Supplier</label>
+              <select name="supplier_id" id="editSupplier" class="form-select">
+                <option value="">None / Direct Procurement</option>
+                {% for s in suppliers %}
+                  <option value="{{ s.id }}">{{ s.company_name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label fw-semibold small">Purchase Cost (₹) <span class="text-danger">*</span></label>
+              <input type="number" step="0.01" min="0" name="purchase_price" id="editPurchasePrice" class="form-control" required>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold small">Selling Price (₹) <span class="text-danger">*</span></label>
+              <input type="number" step="0.01" min="0" name="selling_price" id="editSellingPrice" class="form-control" required>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold small">Unit of Measure</label>
+              <select name="unit" id="editUnit" class="form-select">
+                <option value="pcs">Pieces (pcs)</option>
+                <option value="pack">Pack</option>
+                <option value="kg">Kilogram (kg)</option>
+                <option value="g">Gram (g)</option>
+                <option value="ltr">Litre (ltr)</option>
+                <option value="bottle">Bottle</option>
+                <option value="box">Box</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold small">Min Stock Alert</label>
+              <input type="number" min="1" name="min_stock_level" id="editMinStock" class="form-control" required>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">Expiry Date</label>
+              <input type="date" name="expiry_date" id="editExpiryDate" class="form-control">
+            </div>
+
+            <div class="col-12">
+              <label class="form-label fw-semibold small">Product Description</label>
+              <textarea name="description" id="editDescription" class="form-control" rows="2"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary fw-bold">Update Product</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- 3. Product Details Modal -->
+<div class="modal fade" id="productDetailsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold" id="detailProdName">Product Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="p-3 bg-light rounded-3 mb-3 text-center">
+          <div class="fw-bold fs-5 text-dark" id="detailSku">SKU</div>
+          <div class="text-muted small font-monospace" id="detailBarcode">Barcode</div>
+        </div>
+        <table class="table table-sm table-borderless">
+          <tbody>
+            <tr><td class="text-muted">Brand:</td><td class="fw-bold" id="detailBrand"></td></tr>
+            <tr><td class="text-muted">Category:</td><td class="fw-bold" id="detailCategory"></td></tr>
+            <tr><td class="text-muted">Supplier:</td><td class="fw-bold" id="detailSupplier"></td></tr>
+            <tr><td class="text-muted">Selling Price:</td><td class="fw-bold text-primary" id="detailSellingPrice"></td></tr>
+            <tr><td class="text-muted">Purchase Cost:</td><td class="fw-bold" id="detailPurchasePrice"></td></tr>
+            <tr><td class="text-muted">Gross Margin:</td><td class="fw-bold text-success" id="detailMargin"></td></tr>
+            <tr><td class="text-muted">Current Stock:</td><td class="fw-bold" id="detailQuantity"></td></tr>
+            <tr><td class="text-muted">Min Threshold:</td><td class="fw-bold" id="detailMinStock"></td></tr>
+            <tr><td class="text-muted">Inventory Value:</td><td class="fw-bold" id="detailTotalValue"></td></tr>
+            <tr><td class="text-muted">Expiry Date:</td><td class="fw-bold" id="detailExpiry"></td></tr>
+            <tr><td class="text-muted">Description:</td><td class="small" id="detailDesc"></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 4. Delete Confirmation Modal -->
+<div class="modal fade" id="deleteProductModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Confirm Removal</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body py-3">
+        <p>Are you sure you want to remove <strong id="deleteProductName"></strong> from the active supermarket catalog?</p>
+        <p class="text-muted small mb-0">Historical sales records, billing invoices, and stock logs referencing this product will be preserved automatically.</p>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+        <form id="deleteProductForm" method="POST" action="">
+          <button type="submit" class="btn btn-danger">Yes, Delete Product</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function viewProductDetails(productId) {
+  fetch(`/products/api/${productId}`)
+    .then(r => r.json())
+    .then(p => {
+      document.getElementById('detailProdName').textContent = p.name;
+      document.getElementById('detailSku').textContent = 'SKU: ' + p.sku;
+      document.getElementById('detailBarcode').textContent = 'Barcode: ' + p.barcode;
+      document.getElementById('detailBrand').textContent = p.brand;
+      document.getElementById('detailCategory').textContent = p.category_name;
+      document.getElementById('detailSupplier').textContent = p.supplier_name;
+      document.getElementById('detailSellingPrice').textContent = '₹' + p.selling_price.toFixed(2);
+      document.getElementById('detailPurchasePrice').textContent = '₹' + p.purchase_price.toFixed(2);
+      document.getElementById('detailMargin').textContent = p.margin + '%';
+      document.getElementById('detailQuantity').textContent = p.quantity + ' ' + p.unit;
+      document.getElementById('detailMinStock').textContent = p.min_stock_level + ' ' + p.unit;
+      document.getElementById('detailTotalValue').textContent = '₹' + p.total_value.toFixed(2);
+      document.getElementById('detailExpiry').textContent = p.expiry_date || 'N/A';
+      document.getElementById('detailDesc').textContent = p.description || 'No description provided.';
+      new bootstrap.Modal(document.getElementById('productDetailsModal')).show();
+    });
+}
+
+function openEditModal(productId) {
+  fetch(`/products/api/${productId}`)
+    .then(r => r.json())
+    .then(p => {
+      document.getElementById('editProductForm').action = `/products/edit/${p.id}`;
+      document.getElementById('editName').value = p.name;
+      document.getElementById('editBrand').value = p.brand;
+      document.getElementById('editSku').value = p.sku;
+      document.getElementById('editBarcode').value = p.barcode;
+      document.getElementById('editCategory').value = p.category_id;
+      document.getElementById('editSupplier').value = p.supplier_id || '';
+      document.getElementById('editPurchasePrice').value = p.purchase_price;
+      document.getElementById('editSellingPrice').value = p.selling_price;
+      document.getElementById('editUnit').value = p.unit;
+      document.getElementById('editMinStock').value = p.min_stock_level;
+      document.getElementById('editExpiryDate').value = p.expiry_date || '';
+      document.getElementById('editDescription').value = p.description || '';
+      new bootstrap.Modal(document.getElementById('editProductModal')).show();
+    });
+}
+
+function confirmDeleteProduct(id, name) {
+  document.getElementById('deleteProductName').textContent = name;
+  document.getElementById('deleteProductForm').action = `/products/delete/${id}`;
+  new bootstrap.Modal(document.getElementById('deleteProductModal')).show();
+}
+</script>
+{% endblock %}
