@@ -979,6 +979,40 @@ a:hover {
   margin-bottom: 1.75rem;
 }
 
+/* Utility Classes & POS Extensions */
+.btn-xs {
+  padding: 0.18rem 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  line-height: 1.2;
+}
+
+.pos-disc-btn, .pos-denom-btn {
+  transition: all 0.15s ease-in-out;
+}
+
+.pos-disc-btn:hover, .pos-denom-btn:hover {
+  transform: translateY(-1px);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.pos-card-cart-pill {
+  animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
 /* Mobile Responsiveness */
 @media (max-width: 992px) {
   .app-sidebar {

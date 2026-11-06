@@ -71,6 +71,30 @@ def create_app(config_class=Config):
         except Exception as e:
             app.logger.warning(f"Database initialization note: {e}")
 
+    # Convenient Route Aliases
+    @app.route('/login')
+    def login_alias():
+        return redirect(url_for('auth.login'))
+
+    @app.route('/register')
+    def register_alias():
+        return redirect(url_for('auth.register'))
+
+    @app.route('/logout')
+    def logout_alias():
+        return redirect(url_for('auth.logout'))
+
+    @app.route('/pos')
+    @app.route('/billing')
+    def pos_alias():
+        return redirect(url_for('sales.index'))
+
+    # Static file fallback handler (ensures static files always serve regardless of proxy)
+    from flask import send_from_directory
+    @app.route('/static/<path:filename>')
+    def serve_static(filename):
+        return send_from_directory(os.path.join(app.root_path, 'static'), filename)
+
     # Error handlers
     @app.errorhandler(404)
     def page_not_found(e):

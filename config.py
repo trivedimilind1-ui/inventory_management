@@ -24,6 +24,14 @@ class Config:
             _db_url = _db_url.replace("postgres://", "postgresql://", 1)
         SQLALCHEMY_DATABASE_URI = _db_url
     elif os.environ.get('VERCEL') or os.environ.get('AWS_LAMBDA_FUNCTION_NAME'):
+        tmp_db = Path('/tmp/smartstock.db')
+        local_seed_db = BASE_DIR / 'smartstock.db'
+        if not tmp_db.exists() and local_seed_db.exists():
+            import shutil
+            try:
+                shutil.copy2(local_seed_db, tmp_db)
+            except Exception:
+                pass
         SQLALCHEMY_DATABASE_URI = 'sqlite:////tmp/smartstock.db'
     else:
         # Check if MySQL environment credentials are provided
